@@ -5,8 +5,11 @@
   "main": "dist/src/index.js",
   "files": [],
   "scripts": {
+    "start": "ts-node src/index.ts",
     "test": "jest",
-    "build": "tsc"
+    "prebuild": "rimraf dist",
+    "build": "tsc",
+    "postbuild": "zarro flatten-dist"
   },
   "repository": {
     "type": "git",
@@ -20,12 +23,23 @@
   },
   "homepage": "https://github.com/fluffynuts/git-infect#readme",
   "devDependencies": {
+    "@types/chalk": "^2.2.0",
     "@types/faker": "^4.1.12",
     "@types/jest": "^25.2.3",
+    "@types/yargs": "^15.0.5",
     "expect-more-jest": "^5.1.0",
     "faker": "^4.1.0",
+    "filesystem-sandbox": "^1.0.0",
+    "glob": "^7.1.6",
     "jest": "^26.0.1",
+    "rimraf": "^3.0.2",
     "ts-jest": "^26.0.0",
-    "typescript": "^3.9.3"
+    "ts-node": "^8.10.1",
+    "typescript": "^3.9.3",
+    "zarro": "^1.48.0"
+  },
+  "dependencies": {
+    "chalk": "^4.0.0",
+    "yargs": "^15.3.1"
   }
 }
