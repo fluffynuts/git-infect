@@ -6,10 +6,11 @@
   "files": [],
   "scripts": {
     "start": "ts-node src/index.ts",
+    "pretest": "run-s clear-sandboxes",
     "test": "jest",
+    "clear-sandboxes": "node -e \"require('filesystem-sandbox').Sandbox.destroyAny();\"",
     "prebuild": "rimraf dist",
-    "build": "tsc",
-    "postbuild": "zarro flatten-dist"
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -27,19 +28,21 @@
     "@types/faker": "^4.1.12",
     "@types/jest": "^25.2.3",
     "@types/yargs": "^15.0.5",
+    "expect-even-more-jest": "0.0.4",
     "expect-more-jest": "^5.1.0",
     "faker": "^4.1.0",
-    "filesystem-sandbox": "^1.0.0",
+    "filesystem-sandbox": "^1.8.0",
     "glob": "^7.1.6",
     "jest": "^26.0.1",
     "rimraf": "^3.0.2",
     "ts-jest": "^26.0.0",
     "ts-node": "^8.10.1",
     "typescript": "^3.9.3",
-    "zarro": "^1.48.0"
+    "zarro": "^1.49.0"
   },
   "dependencies": {
     "chalk": "^4.0.0",
+    "simple-git": "^2.5.0",
     "yargs": "^15.3.1"
   }
 }
