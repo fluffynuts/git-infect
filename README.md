@@ -1,4 +1,4 @@
-# git-infect
+# git-broadcast
 
 Utility to merge outwards from one branch to all others, where cleanly possible
 

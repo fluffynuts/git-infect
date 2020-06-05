@@ -1,0 +1,99 @@
+import { spawn, SpawnOptions } from "child_process";
+
+export interface ProcessResult {
+    stdout: string[];
+    stderr: string[];
+    exitCode: number;
+    error?: Error;
+}
+
+interface ExecOptions extends SpawnOptions {
+    trimOutputs?: boolean; // when true, trim off empty lines at the end
+}
+
+const lineTrimRe = /(\r|\n|\r\n)$/;
+
+// runs a command and returns the result
+export async function exec(
+    cmd: string,
+    args: string[],
+    options?: ExecOptions
+): Promise<ProcessResult> {
+    return new Promise((resolve, reject) => {
+        let completed = false;
+        const
+            result: ProcessResult = {
+                stdout: [],
+                stderr: [],
+                exitCode: 0,
+            },
+            isComplete = () => {
+                if (completed) {
+                    return true;
+                }
+                completed = true;
+                return false;
+            },
+            trim = options?.trimOutputs === undefined || options?.trimOutputs
+                ? trimLines
+                : passThrough,
+            resolveWith = (result: ProcessResult) => {
+                return isComplete() || resolve(trim(result));
+            },
+            rejectWith = (err: Error | number) => {
+                if (isComplete()) {
+                    return;
+                }
+                if (typeof err === "number") {
+                    result.exitCode = err;
+                } else {
+                    result.error = err;
+                }
+                reject(trim(result));
+            },
+            process = spawn(cmd, args, options as SpawnOptions);
+        if (!process.stdout) {
+            throw new Error(`No stdout acquired for ${ cmd } "${ args.join(", ") }"`);
+        }
+        process.stdout?.on("data", d => appendLines(result.stdout, d));
+        process.stderr?.on("data", d => appendLines(result.stderr, d));
+        process.on("error", e => rejectWith(e));
+        process.on("close", code => code ? rejectWith(code) : resolveWith(result));
+    });
+}
+
+function trimLines(from: ProcessResult): ProcessResult {
+    return {
+        ...from,
+        stderr: trimEmptyElements(from.stderr),
+        stdout: trimEmptyElements(from.stdout)
+    }
+}
+
+function trimEmptyElements(arr: string[]): string[] {
+    let foundData = false;
+    return arr.reverse().reduce(
+        (acc: string[], cur: string) => {
+            if (foundData) {
+                acc.push(cur);
+            } else if (cur !== "") {
+                foundData = true;
+                acc.push(cur);
+            }
+            return acc;
+        }, [] as string[]
+    ).reverse();
+}
+
+function passThrough<T>(value: T): T {
+    return value;
+}
+
+function appendLines(target: string[], data: Buffer) {
+    target.push.apply(
+        target,
+        data.toString()
+            .split("\n")
+            .map(l => l.replace(lineTrimRe, ""))
+    );
+}
