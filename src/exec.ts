@@ -51,14 +51,14 @@ export async function exec(
                 }
                 _reject(trim(result));
             },
-            process = spawn(cmd, args, options as SpawnOptions);
-        if (!process.stdout) {
+            child = spawn(cmd, args, options as SpawnOptions);
+        if (!child.stdout) {
             throw new Error(`No stdout acquired for ${ cmd } "${ args.join(", ") }"`);
         }
-        process.stdout?.on("data", d => appendLines(result.stdout, d));
-        process.stderr?.on("data", d => appendLines(result.stderr, d));
-        process.on("error", e => rejectWith(e));
-        process.on("close", code => code ? rejectWith(code) : resolve());
+        child.stdout?.on("data", d => appendLines(result.stdout, d));
+        child.stderr?.on("data", d => appendLines(result.stderr, d));
+        child.on("error", e => rejectWith(e));
+        child.on("close", code => code ? rejectWith(code) : resolve());
     });
 }
 

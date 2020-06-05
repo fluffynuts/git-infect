@@ -4,7 +4,7 @@ import * as faker from "faker";
 import { gitBroadcast } from "../src/git-broadcast";
 import { Repository } from "./repository";
 
-describe(`infect`, () => {
+describe(`git-broadcast`, () => {
     beforeEach(() => {
         // we're doing fs-ops here, give things a little more
         // time (though they generally won't need it)
@@ -129,5 +129,4 @@ describe(`infect`, () => {
     });
 
     afterEach(async () => await Sandbox.destroyAll());
-    beforeAll(async () => await Sandbox.destroyAny());
 });
