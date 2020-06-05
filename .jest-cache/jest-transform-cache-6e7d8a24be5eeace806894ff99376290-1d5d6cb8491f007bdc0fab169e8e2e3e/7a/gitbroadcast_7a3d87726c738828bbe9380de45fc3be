@@ -1,0 +1,243 @@
+a7adf34cc9e8b20c39d0970e90debe35
+"use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.gitBroadcast = void 0;
+var exec_1 = require("./exec");
+var defaultOptions = {
+    from: undefined,
+    to: ["*"],
+    ignoreMissingBranches: false
+};
+var currentBranchRe = /^\*\s/;
+function gitBroadcast(providedOptions) {
+    return __awaiter(this, void 0, void 0, function () {
+        var opts;
+        var _this = this;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    opts = __assign(__assign({}, defaultOptions), providedOptions);
+                    return [4 /*yield*/, runIn(opts.in, function () { return __awaiter(_this, void 0, void 0, function () {
+                            var startBranch, _a, _i, _b, to, allTargets, _c, allTargets_1, target;
+                            return __generator(this, function (_d) {
+                                switch (_d.label) {
+                                    case 0: return [4 /*yield*/, findCurrentBranch()];
+                                    case 1:
+                                        startBranch = _d.sent();
+                                        if (!!opts.from) return [3 /*break*/, 3];
+                                        _a = opts;
+                                        return [4 /*yield*/, findBestMaster()];
+                                    case 2:
+                                        _a.from = _d.sent();
+                                        return [3 /*break*/, 6];
+                                    case 3: return [4 /*yield*/, gitCheckout(opts.from)];
+                                    case 4:
+                                        _d.sent();
+                                        return [4 /*yield*/, git("pull", "--rebase")];
+                                    case 5:
+                                        _d.sent();
+                                        _d.label = 6;
+                                    case 6:
+                                        _i = 0, _b = (opts.to || []);
+                                        _d.label = 7;
+                                    case 7:
+                                        if (!(_i < _b.length)) return [3 /*break*/, 14];
+                                        to = _b[_i];
+                                        return [4 /*yield*/, matchBranches(to)];
+                                    case 8:
+                                        allTargets = _d.sent();
+                                        if (allTargets.length === 0) {
+                                            if (opts.ignoreMissingBranches) {
+                                                return [3 /*break*/, 13];
+                                            }
+                                            throw new Error("Can't match branch spec '" + to + "'");
+                                        }
+                                        _c = 0, allTargets_1 = allTargets;
+                                        _d.label = 9;
+                                    case 9:
+                                        if (!(_c < allTargets_1.length)) return [3 /*break*/, 13];
+                                        target = allTargets_1[_c];
+                                        return [4 /*yield*/, gitCheckout(target)];
+                                    case 10:
+                                        _d.sent();
+                                        return [4 /*yield*/, gitMerge(opts.from)];
+                                    case 11:
+                                        _d.sent();
+                                        _d.label = 12;
+                                    case 12:
+                                        _c++;
+                                        return [3 /*break*/, 9];
+                                    case 13:
+                                        _i++;
+                                        return [3 /*break*/, 7];
+                                    case 14:
+                                        if (!startBranch) return [3 /*break*/, 16];
+                                        return [4 /*yield*/, gitCheckout(startBranch)];
+                                    case 15:
+                                        _d.sent();
+                                        _d.label = 16;
+                                    case 16: return [2 /*return*/];
+                                }
+                            });
+                        }); })];
+                case 1:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+exports.gitBroadcast = gitBroadcast;
+function gitCheckout(branch) {
+    return git("checkout", branch);
+}
+function gitMerge(branch) {
+    return git("merge", branch);
+}
+function git() {
+    var args = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        args[_i] = arguments[_i];
+    }
+    return exec_1.exec("git", args);
+}
+function runIn(dir, action) {
+    return __awaiter(this, void 0, void 0, function () {
+        var start;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    start = process.cwd();
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, , 3, 4]);
+                    if (dir) {
+                        process.chdir(dir);
+                    }
+                    return [4 /*yield*/, action()];
+                case 2:
+                    _a.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    process.chdir(start);
+                    return [7 /*endfinally*/];
+                case 4: return [2 /*return*/];
+            }
+        });
+    });
+}
+function findBestMaster() {
+    return __awaiter(this, void 0, void 0, function () {
+        var listing, withoutRemotesPrefix, originMaster, master;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, matchBranches("*master")];
+                case 1:
+                    listing = _a.sent();
+                    withoutRemotesPrefix = listing
+                        .map(function (l) { return l.replace(/^remotes\//, ""); });
+                    originMaster = withoutRemotesPrefix.find(function (l) { return l === "origin/master"; });
+                    if (originMaster) {
+                        return [2 /*return*/, originMaster];
+                    }
+                    master = withoutRemotesPrefix.find(function (l) { return l === "master"; });
+                    if (master) {
+                        return [2 /*return*/, master];
+                    }
+                    throw new Error("Can't automatically determine which branch to broadcast from (tried origin/master, master). Please specify a from branch.");
+            }
+        });
+    });
+}
+function findCurrentBranch() {
+    return __awaiter(this, void 0, void 0, function () {
+        var all, current;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, listBranchesRaw()];
+                case 1:
+                    all = _a.sent(), current = all.find(function (a) { return a.startsWith("*"); });
+                    return [2 /*return*/, current
+                            ? current.replace(currentBranchRe, "")
+                            : current];
+            }
+        });
+    });
+}
+function listBranchesRaw(spec) {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    if (!spec) {
+                        spec = "*";
+                    }
+                    return [4 /*yield*/, git("branch", "-a", "--list", spec)];
+                case 1: return [2 /*return*/, (_a.sent()).stdout];
+            }
+        });
+    });
+}
+function matchBranches(spec) {
+    return __awaiter(this, void 0, void 0, function () {
+        var result;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, listBranchesRaw(spec)];
+                case 1:
+                    result = _a.sent();
+                    return [2 /*return*/, result.map(
+                        // remove the "current branch" marker
+                        function (line) { return line.replace(currentBranchRe, ""); }).map(function (line) { return line.trim(); })];
+            }
+        });
+    });
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiQzpcXGNvZGVcXG9wZW5zb3VyY2VcXGdpdC1icm9hZGNhc3RcXHNyY1xcZ2l0LWJyb2FkY2FzdC50cyIsInNvdXJjZXMiOlsiQzpcXGNvZGVcXG9wZW5zb3VyY2VcXGdpdC1icm9hZGNhc3RcXHNyY1xcZ2l0LWJyb2FkY2FzdC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OztBQUFBLCtCQUE2QztBQVM3QyxJQUFNLGNBQWMsR0FBcUI7SUFDckMsSUFBSSxFQUFFLFNBQVM7SUFDZixFQUFFLEVBQUUsQ0FBQyxHQUFHLENBQUM7SUFDVCxxQkFBcUIsRUFBRSxLQUFLO0NBQy9CLENBQUE7QUFFRCxJQUFNLGVBQWUsR0FBRyxPQUFPLENBQUM7QUFJaEMsU0FBc0IsWUFBWSxDQUM5QixlQUFpQzs7Ozs7OztvQkFDM0IsSUFBSSx5QkFDSCxjQUFjLEdBQ2QsZUFBZSxDQUNyQixDQUFBO29CQUNELHFCQUFNLEtBQUssQ0FBQyxJQUFJLENBQUMsRUFBRSxFQUFFOzs7OzRDQUNHLHFCQUFNLGlCQUFpQixFQUFFLEVBQUE7O3dDQUF2QyxXQUFXLEdBQUcsU0FBeUI7NkNBQ3pDLENBQUMsSUFBSSxDQUFDLElBQUksRUFBVix3QkFBVTt3Q0FDVixLQUFBLElBQUksQ0FBQTt3Q0FBUSxxQkFBTSxjQUFjLEVBQUUsRUFBQTs7d0NBQWxDLEdBQUssSUFBSSxHQUFHLFNBQXNCLENBQUM7OzRDQUVuQyxxQkFBTSxXQUFXLENBQUMsSUFBSSxDQUFDLElBQUksQ0FBQyxFQUFBOzt3Q0FBNUIsU0FBNEIsQ0FBQzt3Q0FDN0IscUJBQU0sR0FBRyxDQUFDLE1BQU0sRUFBRSxVQUFVLENBQUMsRUFBQTs7d0NBQTdCLFNBQTZCLENBQUM7Ozs4Q0FFRixFQUFmLE1BQUMsSUFBSSxDQUFDLEVBQUUsSUFBSSxFQUFFLENBQUM7Ozs2Q0FBZixDQUFBLGNBQWUsQ0FBQTt3Q0FBckIsRUFBRTt3Q0FDVSxxQkFB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QyxVQUFVLENBQUMsR0FBRyxDQUFDLEVBQWpCLENBQWlCLENBQUM7b0JBQzlDLHNCQUFPLE9BQU87NEJBQ1YsQ0FBQyxDQUFDLE9BQU8sQ0FBQyxPQUFPLENBQUMsZUFBZSxFQUFFLEVBQUUsQ0FBQzs0QkFDdEMsQ0FBQyxDQUFDLE9BQU8sRUFBQzs7OztDQUNqQjtBQUVELFNBQWUsZUFBZSxDQUFDLElBQWE7Ozs7O29CQUN4QyxJQUFJLENBQUMsSUFBSSxFQUFFO3dCQUNQLElBQUksR0FBRyxHQUFHLENBQUM7cUJBQ2Q7b0JBRUcscUJBQU0sR0FBRyxDQUFDLFFBQVEsRUFBRSxJQUFJLEVBQUUsUUFBUSxFQUFFLElBQUksQ0FBQyxFQUFBO3dCQUQ3QyxzQkFBTyxDQUNILFNBQXlDLENBQzVDLENBQUMsTUFBTSxFQUFDOzs7O0NBQ1o7QUFFRCxTQUFlLGFBQWEsQ0FBQyxJQUFZOzs7Ozt3QkFDdEIscUJBQU0sZUFBZSxDQUFDLElBQUksQ0FBQyxFQUFBOztvQkFBcEMsTUFBTSxHQUFHLFNBQTJCO29CQUMxQyxzQkFBTyxNQUFNLENBQUMsR0FBRzt3QkFDYixxQ0FBcUM7d0JBQ3JDLFVBQUEsSUFBSSxJQUFJLE9BQUEsSUFBSSxDQUFDLE9BQU8sQ0FBQyxlQUFlLEVBQUUsRUFBRSxDQUFDLEVBQWpDLENBQWlDLENBQzVDLENBQUMsR0FBRyxDQUFDLFVBQUEsSUFBSSxJQUFJLE9BQUEsSUFBSSxDQUFDLElBQUksRUFBRSxFQUFYLENBQVcsQ0FBQyxFQUFDOzs7O0NBQzlCIiwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgZXhlYywgUHJvY2Vzc1Jlc3VsdCB9IGZyb20gXCIuL2V4ZWNcIjtcclxuXHJcbmV4cG9ydCBpbnRlcmZhY2UgQnJvYWRjYXN0T3B0aW9ucyB7XHJcbiAgICBpbj86IHN0cmluZztcclxuICAgIGZyb20/OiBzdHJpbmc7XHJcbiAgICB0bz86IHN0cmluZ1tdLFxyXG4gICAgaWdub3JlTWlzc2luZ0JyYW5jaGVzPzogYm9vbGVhbjtcclxufVxyXG5cclxuY29uc3QgZGVmYXVsdE9wdGlvbnM6IEJyb2FkY2FzdE9wdGlvbnMgPSB7XHJcbiAgICBmcm9tOiB1bmRlZmluZWQsXHJcbiAgICB0bzogW1wiKlwiXSxcclxuICAgIGlnbm9yZU1pc3NpbmdCcmFuY2hlczogZmFsc2VcclxufVxyXG5cclxuY29uc3QgY3VycmVudEJyYW5jaFJlID0gL15cXCpcXHMvO1xyXG5cclxudHlwZSBBc3luY0FjdGlvbiA9ICgoKSA9PiBQcm9taXNlPGFueT4pO1xyXG5cclxuZXhwb3J0IGFzeW5jIGZ1bmN0aW9uIGdpdEJyb2FkY2FzdChcclxuICAgIHByb3ZpZGVkT3B0aW9uczogQnJvYWRjYXN0T3B0aW9ucykge1xyXG4gICAgY29uc3Qgb3B0cyA9IHtcclxuICAgICAgICAuLi5kZWZhdWx0T3B0aW9ucyxcclxuICAgICAgICAuLi5wcm92aWRlZE9wdGlvbnNcclxuICAgIH1cclxuICAgIGF3YWl0IHJ1bkluKG9wdHMuaW4sIGFzeW5jICgpID0+IHtcclxuICAgICAgICBjb25zdCBzdGFydEJyYW5jaCA9IGF3YWl0IGZpbmRDdXJyZW50QnJhbmNoKCk7XHJcbiAgICAgICAgaWYgKCFvcHRzLmZyb20pIHtcclxuICAgICAgICAgICAgb3B0cy5mcm9tID0gYXdhaXQgZmluZEJlc3RNYXN0ZXIoKTtcclxuICAgICAgICB9IGVsc2Uge1xyXG4gICAgICAgICAgICBhd2FpdCBnaXRDaGVja291dChvcHRzLmZyb20pO1xyXG4gICAgICAgICAgICBhd2FpdCBnaXQoXCJwdWxsXCIsIFwiLS1yZWJhc2VcIik7XHJcbiAgICAgICAgfVxyXG4gICAgICAgIGZvciAoY29uc3QgdG8gb2YgKG9wdHMudG8gfHwgW10pKSB7XHJcbiAgICAgICAgICAgIGNvbnN0IGFsbFRhcmdldHMgPSBhd2FpdCBtYXRjaEJyYW5jaGVzKHRvKTtcclxuICAgICAgICAgICAgaWYgKGFsbFRhcmdldHMubGVuZ3RoID09PSAwKSB7XHJcbiAgICAgICAgICAgICAgICBpZiAob3B0cy5pZ25vcmVNaXNzaW5nQnJhbmNoZXMpIHtcclxuICAgICAgICAgICAgICAgICAgICBjb250aW51ZTtcclxuICAgICAgICAgICAgICAgIH1cclxuICAgICAgICAgICAgICAgIHRocm93IG5ldyBFcnJvcihgQ2FuJ3QgbWF0Y2ggYnJhbmNoIHNwZWMgJyR7IHRvIH0nYCk7XHJcbiAgICAgICAgICAgIH1cclxuICAgICAgICAgICAgZm9yIChjb25zdCB0YXJnZXQgb2YgYWxsVGFyZ2V0cykge1xyXG4gICAgICAgICAgICAgICAgYXdhaXQgZ2l0Q2hlY2tvdXQodGFyZ2V0KTtcclxuICAgICAgICAgICAgICAgIGF3YWl0IGdpdE1lcmdlKG9wdHMuZnJvbSk7XHJcbiAgICAgICAgICAgIH1cclxuICAgICAgICB9XHJcbiAgICAgICAgaWYgKHN0YXJ0QnJhbmNoKSB7XHJcbiAgICAgICAgICAgIGF3YWl0IGdpdENoZWNrb3V0KHN0YXJ0QnJhbmNoKTtcclxuICAgICAgICB9XHJcbiAgICB9KTtcclxufVxyXG5cclxuZnVuY3Rpb24gZ2l0Q2hlY2tvdXQoYnJhbmNoOiBzdHJpbmcpOiBQcm9taXNlPFByb2Nlc3NSZXN1bHQ+IHtcclxuICAgIHJldHVybiBnaXQoXCJjaGVja291dFwiLCBicmFuY2gpO1xyXG59XHJcbmZ1bmN0aW9uIGdpdE1lcmdlKGJyYW5jaDogc3RyaW5nKTogUHJvbWlzZTxQcm9jZXNzUmVzdWx0PiB7XHJcbiAgICByZXR1cm4gZ2l0KFwibWVyZ2VcIiwgYnJhbmNoKTtcclxufVxyXG5mdW5jdGlvbiBnaXQoLi4uYXJnczogc3RyaW5nW10pOiBQcm9taXNlPFByb2Nlc3NSZXN1bHQ+IHtcclxuICAgIHJldHVybiBleGVjKFwiZ2l0XCIsIGFyZ3MpO1xyXG59XHJcblxyXG5hc3luYyBmdW5jdGlvbiBydW5JbihcclxuICAgIGRpcjogc3RyaW5nIHwgdW5kZWZpbmVkLFxyXG4gICAgYWN0aW9uOiBBc3luY0FjdGlvbikge1xyXG4gICAgY29uc3Qgc3RhcnQgPSBwcm9jZXNzLmN3ZCgpO1xyXG4gICAgdHJ5IHtcclxuICAgICAgICBpZiAoZGlyKSB7XHJcbiAgICAgICAgICAgIHByb2Nlc3MuY2hkaXIoZGlyKTtcclxuICAgICAgICB9XHJcbiAgICAgICAgYXdhaXQgYWN0aW9uKCk7XHJcbiAgICB9IGZpbmFsbHkge1xyXG4gICAgICAgIHByb2Nlc3MuY2hkaXIoc3RhcnQpO1xyXG4gICAgfVxyXG59XHJcblxyXG5hc3luYyBmdW5jdGlvbiBmaW5kQmVzdE1hc3RlcigpIHtcclxuICAgIGNvbnN0IGxpc3RpbmcgPSBhd2FpdCBtYXRjaEJyYW5jaGVzKFwiKm1hc3RlclwiKTtcclxuICAgIGNvbnN0IHdpdGhvdXRSZW1vdGVzUHJlZml4ID0gbGlzdGluZ1xyXG4gICAgICAgIC5tYXAoXHJcbiAgICAgICAgICAgIGwgPT4gbC5yZXBsYWNlKC9ecmVtb3Rlc1xcLy8sIFwiXCIpXHJcbiAgICAgICAgKTtcclxuICAgIGNvbnN0IG9yaWdpbk1hc3RlciA9IHdpdGhvdXRSZW1vdGVzUHJlZml4LmZpbmQobCA9PiBsID09PSBcIm9yaWdpbi9tYXN0ZXJcIilcclxuICAgIGlmIChvcmlnaW5NYXN0ZXIpIHtcclxuICAgICAgICByZXR1cm4gb3JpZ2luTWFzdGVyO1xyXG4gICAgfVxyXG4gICAgY29uc3QgbWFzdGVyID0gd2l0aG91dFJlbW90ZXNQcmVmaXguZmluZChsID0+IGwgPT09IFwibWFzdGVyXCIpO1xyXG4gICAgaWYgKG1hc3Rlcikge1xyXG4gICAgICAgIHJldHVybiBtYXN0ZXI7XHJcbiAgICB9XHJcbiAgICB0aHJvdyBuZXcgRXJyb3IoXHJcbiAgICAgICAgYENhbid0IGF1dG9tYXRpY2FsbHkgZGV0ZXJtaW5lIHdoaWNoIGJyYW5jaCB0byBicm9hZGNhc3QgZnJvbSAodHJpZWQgb3JpZ2luL21hc3RlciwgbWFzdGVyKS4gUGxlYXNlIHNwZWNpZnkgYSBmcm9tIGJyYW5jaC5gXHJcbiAgICApXHJcbn1cclxuXHJcbmFzeW5jIGZ1bmN0aW9uIGZpbmRDdXJyZW50QnJhbmNoKCk6IFByb21pc2U8c3RyaW5nIHwgdW5kZWZpbmVkPiB7XHJcbiAgICBjb25zdFxyXG4gICAgICAgIGFsbCA9IGF3YWl0IGxpc3RCcmFuY2hlc1JhdygpLFxyXG4gICAgICAgIGN1cnJlbnQgPSBhbGwuZmluZChhID0+IGEuc3RhcnRzV2l0aChcIipcIikpO1xyXG4gICAgcmV0dXJuIGN1cnJlbnRcclxuICAgICAgICA/IGN1cnJlbnQucmVwbGFjZShjdXJyZW50QnJhbmNoUmUsIFwiXCIpXHJcbiAgICAgICAgOiBjdXJyZW50O1xyXG59XHJcblxyXG5hc3luYyBmdW5jdGlvbiBsaXN0QnJhbmNoZXNSYXcoc3BlYz86IHN0cmluZyk6IFByb21pc2U8c3RyaW5nW10+IHtcclxuICAgIGlmICghc3BlYykge1xyXG4gICAgICAgIHNwZWMgPSBcIipcIjtcclxuICAgIH1cclxuICAgIHJldHVybiAoXHJcbiAgICAgICAgYXdhaXQgZ2l0KFwiYnJhbmNoXCIsIFwiLWFcIiwgXCItLWxpc3RcIiwgc3BlYylcclxuICAgICkuc3Rkb3V0O1xyXG59XHJcblxyXG5hc3luYyBmdW5jdGlvbiBtYXRjaEJyYW5jaGVzKHNwZWM6IHN0cmluZyk6IFByb21pc2U8c3RyaW5nW10+IHtcclxuICAgIGNvbnN0IHJlc3VsdCA9IGF3YWl0IGxpc3RCcmFuY2hlc1JhdyhzcGVjKTtcclxuICAgIHJldHVybiByZXN1bHQubWFwKFxyXG4gICAgICAgIC8vIHJlbW92ZSB0aGUgXCJjdXJyZW50IGJyYW5jaFwiIG1hcmtlclxyXG4gICAgICAgIGxpbmUgPT4gbGluZS5yZXBsYWNlKGN1cnJlbnRCcmFuY2hSZSwgXCJcIilcclxuICAgICkubWFwKGxpbmUgPT4gbGluZS50cmltKCkpO1xyXG59XHJcbiJdfQ==
