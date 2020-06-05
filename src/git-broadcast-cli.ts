@@ -34,7 +34,7 @@ function parseArgs() {
         .argv as unknown as BroadcastOptions; // types out of yargs come out a little... funny
 }
 
-(async function() {
+(async () => {
     try {
         const args = parseArgs();
         await gitBroadcast(args);

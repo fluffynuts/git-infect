@@ -19,7 +19,7 @@ export async function exec(
     args: string[],
     options?: ExecOptions
 ): Promise<ProcessResult> {
-    return new Promise((resolve, reject) => {
+    return new Promise((_resolve, _reject) => {
         let completed = false;
         const
             result: ProcessResult = {
@@ -37,8 +37,8 @@ export async function exec(
             trim = options?.trimOutputs === undefined || options?.trimOutputs
                 ? trimLines
                 : passThrough,
-            resolveWith = (result: ProcessResult) => {
-                return isComplete() || resolve(trim(result));
+            resolve = (): any => {
+                return isComplete() || _resolve(trim(result));
             },
             rejectWith = (err: Error | number) => {
                 if (isComplete()) {
@@ -49,7 +49,7 @@ export async function exec(
                 } else {
                     result.error = err;
                 }
-                reject(trim(result));
+                _reject(trim(result));
             },
             process = spawn(cmd, args, options as SpawnOptions);
         if (!process.stdout) {
@@ -58,7 +58,7 @@ export async function exec(
         process.stdout?.on("data", d => appendLines(result.stdout, d));
         process.stderr?.on("data", d => appendLines(result.stderr, d));
         process.on("error", e => rejectWith(e));
-        process.on("close", code => code ? rejectWith(code) : resolveWith(result));
+        process.on("close", code => code ? rejectWith(code) : resolve());
     });
 }
 

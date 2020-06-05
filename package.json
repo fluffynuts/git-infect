@@ -2,12 +2,12 @@
   "name": "git-broadcast",
   "version": "0.0.1",
   "description": "Utility to merge outwards from one branch to all others, where cleanly possible",
-  "main": "dist/infect.js",
+  "main": "dist/git-broadcast.js",
   "files": [
     "dist/**/*"
   ],
   "bin": {
-    "git-infect": "./dist/git-infect-cli.js"
+    "git-broadcast": "./dist/git-broadcast-cli.js"
   },
   "scripts": {
     "start": "ts-node src/git-broadcast-cli.ts",
@@ -15,7 +15,17 @@
     "test": "jest",
     "clear-sandboxes": "node -e \"require('filesystem-sandbox').Sandbox.destroyAny();\"",
     "prebuild": "rimraf dist",
-    "build": "tsc"
+    "build": "run-p lint tsc",
+    "tsc": "tsc",
+    "lint": "tslint -p .",
+    "autobuild": "nodemon -V -w src -w tests -e ts -x \"run-s -s build autobuild-message\"",
+    "autobuild-message": "node -e \"console.log('Auto-build completed', new Date());\"",
+    "increment-package-version-beta": "cross-env VERSION_INCREMENT_STRATEGY=patch run-s \"zarro increment-package-json-version\"",
+    "prerelease-beta": "run-s build test",
+    "release-beta": "cross-env BETA=1 VERSION_INCREMENT_STRATEGY=patch run-s \"zarro release-npm\"",
+    "prerelease": "run-s build test",
+    "release": "cross-env VERSION_INCREMENT_STRATEGY=minor run-s \"zarro release-npm\"",
+    "zarro": "zarro"
   },
   "repository": {
     "type": "git",
@@ -39,9 +49,11 @@
     "filesystem-sandbox": "^1.11.0",
     "glob": "^7.1.6",
     "jest": "^26.0.1",
+    "npm-run-all": "^4.1.5",
     "rimraf": "^3.0.2",
     "ts-jest": "^26.0.0",
     "ts-node": "^8.10.2",
+    "tslint": "^6.1.2",
     "typescript": "^3.9.3",
     "zarro": "^1.49.0"
   },
