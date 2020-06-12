@@ -63,19 +63,17 @@ export async function exec(
 }
 
 export class ExecError extends Error {
-    private generateMessage(): string {
+    private static generateMessage(msg: string, result: ProcessResult): string {
         return [
-            this.message,
-            this.stack,
+            msg,
             ``,
-            `exit code: ${this._result.exitCode}`,
-            `stderr:\n${this._result.stderr.join("\n")}`
+            `exit code: ${result.exitCode}`,
+            `stderr:\n${result.stderr.join("\n")}`
         ].join("\n");
     }
 
     constructor(private _result: ProcessResult) {
-        super("MOO");
-        this.message = `Exec fails:\n${this.generateMessage()}`;
+        super(ExecError.generateMessage("Exec fails", _result));
     }
 
 }
