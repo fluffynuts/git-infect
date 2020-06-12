@@ -50,6 +50,9 @@ export async function gitBroadcast(
                     // we'd want to merge into anyway
                     continue;
                 }
+                if (await branchesAreEquivalent(opts.from, target)) {
+                    continue;
+                }
                 await gitMerge(opts.from);
             }
         }
@@ -57,6 +60,38 @@ export async function gitBroadcast(
             await gitCheckout(startBranch);
         }
     });
+}
+
+async function branchesAreEquivalent(
+    b1: string,
+    b2: string
+) {
+    const
+        shas1 = await revParse(b1),
+        shas2 = await revParse(b2);
+    // TODO: could print out how far ahead one branch is from another
+    return arraysAreEqual(shas1, shas2);
+}
+
+function arraysAreEqual(
+    a1: string[],
+    a2: string[]) {
+    if (a1.length !== a2.length) {
+        return false;
+    }
+    // do this in reverse-order: if there's a mismatch, it's more likely
+    // at the tip
+    for (let i = a1.length - 1; i > -1; i--) {
+        if (a1[i] !== a2[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+async function revParse(branch: string): Promise<string[]> {
+    const raw = await git("rev-parse", branch);
+    return raw.stdout;
 }
 
 function gitCheckout(branch: string): Promise<ProcessResult> {
