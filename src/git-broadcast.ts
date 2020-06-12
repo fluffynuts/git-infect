@@ -32,7 +32,7 @@ export async function gitBroadcast(
             await git("pull", "--rebase");
         }
         for (const to of (opts.to || [])) {
-            const allTargets = await matchBranches(to);
+            const allTargets = (await matchBranches(to)).filter(b => b !== opts.from);
             if (allTargets.length === 0) {
                 if (opts.ignoreMissingBranches) {
                     continue;
@@ -40,7 +40,16 @@ export async function gitBroadcast(
                 throw new Error(`Can't match branch spec '${ to }'`);
             }
             for (const target of allTargets) {
-                await gitCheckout(target);
+                try {
+                    await gitCheckout(target);
+                } catch (e) {
+                    // can't check it out; just ignore it? perhaps there's a more
+                    // deterministic plan, but for now, this will do
+                    // in particular, this is triggered by git branch --list -a *
+                    // bringing back the symbolic remotes/origin/HEAD, which isn't something
+                    // we'd want to merge into anyway
+                    continue;
+                }
                 await gitMerge(opts.from);
             }
         }
@@ -53,9 +62,11 @@ export async function gitBroadcast(
 function gitCheckout(branch: string): Promise<ProcessResult> {
     return git("checkout", branch);
 }
+
 function gitMerge(branch: string): Promise<ProcessResult> {
     return git("merge", branch);
 }
+
 function git(...args: string[]): Promise<ProcessResult> {
     return exec("git", args);
 }

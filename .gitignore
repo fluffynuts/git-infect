@@ -106,3 +106,4 @@ dist
 dist
 .vscode
 __sandboxes__
+.jest-cache
