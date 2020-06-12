@@ -49,7 +49,7 @@ export async function exec(
                 } else {
                     result.error = err;
                 }
-                _reject(trim(result));
+                _reject(new ExecError(trim(result)));
             },
             child = spawn(cmd, args, options as SpawnOptions);
         if (!child.stdout) {
@@ -60,6 +60,23 @@ export async function exec(
         child.on("error", e => rejectWith(e));
         child.on("close", code => code ? rejectWith(code) : resolve());
     });
+}
+
+export class ExecError extends Error {
+    public toString(): string {
+        return [
+            this.message,
+            this.stack,
+            ``,
+            `exit code: ${this._result.exitCode}`,
+            `stderr:\n${this._result.stderr.join("\n")}`
+        ].join("\n");
+    }
+
+    constructor(private _result: ProcessResult) {
+        super("Exec fails:");
+    }
+
 }
 
 function trimLines(from: ProcessResult): ProcessResult {
