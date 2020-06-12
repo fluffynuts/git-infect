@@ -24,7 +24,14 @@ export async function gitBroadcast(
         ...providedOptions
     }
     await runIn(opts.in, async () => {
-        const startBranch = await findCurrentBranch();
+        let startBranch = await findCurrentBranch();
+        if (!startBranch) {
+            await git("checkout", "master");
+            startBranch = await findCurrentBranch();
+        }
+        if (!startBranch) {
+            throw new Error("don't know where to start from!");
+        }
         if (!opts.from) {
             opts.from = await findBestMaster();
         } else {
@@ -48,6 +55,9 @@ export async function gitBroadcast(
                     // in particular, this is triggered by git branch --list -a *
                     // bringing back the symbolic remotes/origin/HEAD, which isn't something
                     // we'd want to merge into anyway
+                    continue;
+                }
+                if (!(await findCurrentBranch())) {
                     continue;
                 }
                 if (await branchesAreEquivalent(opts.from, target)) {
@@ -143,9 +153,13 @@ async function findCurrentBranch(): Promise<string | undefined> {
     const
         all = await listBranchesRaw(),
         current = all.find(a => a.startsWith("*"));
-    return current
+    const result = current
         ? current.replace(currentBranchRe, "")
         : current;
+    if (result?.match(/detached at /)) {
+        return undefined; // not on a branch; we're detached!
+    }
+    return result;
 }
 
 async function listBranchesRaw(spec?: string): Promise<string[]> {
