@@ -63,7 +63,7 @@ export async function exec(
 }
 
 export class ExecError extends Error {
-    public toString(): string {
+    private generateMessage(): string {
         return [
             this.message,
             this.stack,
@@ -74,7 +74,8 @@ export class ExecError extends Error {
     }
 
     constructor(private _result: ProcessResult) {
-        super("Exec fails:");
+        super("MOO");
+        this.message = `Exec fails:\n${this.generateMessage()}`;
     }
 
 }
