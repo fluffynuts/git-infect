@@ -39,6 +39,15 @@ function parseArgs() {
         const args = parseArgs();
         await gitBroadcast(args);
     } catch (e) {
+        if (typeof e !== "string") {
+            if (e.stack) {
+                e = e.stack;
+            } else if (e.message) {
+                e = e.message;
+            } else {
+                e = e.toString();
+            }
+        }
         console.error(chalk.red(e));
         process.exit(1);
     }
