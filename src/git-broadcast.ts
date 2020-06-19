@@ -1,10 +1,14 @@
 import { exec, ProcessResult } from "./exec";
+import { Logger } from "./console-logger";
+import { NullLogger } from "./null-logger";
+import * as chalk from "chalk"
 
 export interface BroadcastOptions {
     in?: string;
     from?: string;
     to?: string[],
     ignoreMissingBranches?: boolean;
+    logger?: Logger;
 }
 
 const defaultOptions: BroadcastOptions = {
@@ -13,33 +17,71 @@ const defaultOptions: BroadcastOptions = {
     ignoreMissingBranches: false
 }
 
+function noop() {
+    // intentionally left blank
+}
+
 const currentBranchRe = /^\*\s/;
 
-type AsyncAction = (() => Promise<any>);
+type AsyncFunc<T> = (() => Promise<T>);
+
+interface FailedMerge {
+    target: string;
+    info: ProcessResult
+}
+
+export interface BroadcastResult {
+    from: string;
+    to: string[];
+    ignoreMissingBranches: boolean;
+    merged: string[];
+    unmerged: FailedMerge[];
+}
 
 export async function gitBroadcast(
-    providedOptions: BroadcastOptions) {
+    providedOptions: BroadcastOptions
+): Promise<BroadcastResult> {
     const opts = {
         ...defaultOptions,
         ...providedOptions
     }
-    await runIn(opts.in, async () => {
+    const logger = opts.logger ?? new NullLogger();
+
+    const result: BroadcastResult = {
+        from: opts.from as string,
+        to: opts.to as string[],
+        ignoreMissingBranches: opts.ignoreMissingBranches as boolean,
+        merged: [] as string[],
+        unmerged: [] as FailedMerge[]
+    };
+    return await runIn(opts.in, async () => {
+        const remotes = await findRemotes();
         let startBranch = await findCurrentBranch();
+        const headRef = (await findBranchWhichIsHeadRef()) ?? "master";
         if (!startBranch) {
-            await git("checkout", "master");
+            // can't assume master is the head ref any more
+            // -> but can fall back on that as a last resort
+            await git("checkout", headRef);
             startBranch = await findCurrentBranch();
         }
         if (!startBranch) {
             throw new Error("don't know where to start from!");
         }
         if (!opts.from) {
-            opts.from = await findBestMaster();
-        } else {
-            await gitCheckout(opts.from);
-            await git("pull", "--rebase");
+            opts.from = headRef; // await findBestMaster();
         }
+        logger.info(`checking out: ${ opts.from }`)
+        await gitCheckout(opts.from);
+        logger.info(`pulling latest on ${ opts.from }`);
+        await git("pull", "--rebase");
+
         for (const to of (opts.to || [])) {
-            const allTargets = (await matchBranches(to)).filter(b => b !== opts.from);
+            const rawMatches = await matchBranches(to);
+            const allTargets = uniq(
+                rawMatches
+                    .filter(b => b !== opts.from)
+                    .map(b => stripRemote(b, remotes))
+            );
             if (allTargets.length === 0) {
                 if (opts.ignoreMissingBranches) {
                     continue;
@@ -48,8 +90,10 @@ export async function gitBroadcast(
             }
             for (const target of allTargets) {
                 try {
+                    logger.info(`check out target: ${ target }`);
                     await gitCheckout(target);
                 } catch (e) {
+                    logger.error(`cannot check out ${ target }; skipping`);
                     // can't check it out; just ignore it? perhaps there's a more
                     // deterministic plan, but for now, this will do
                     // in particular, this is triggered by git branch --list -a *
@@ -58,18 +102,51 @@ export async function gitBroadcast(
                     continue;
                 }
                 if (!(await findCurrentBranch())) {
+                    logger.error(`can't find current branch!`);
                     continue;
                 }
                 if (await branchesAreEquivalent(opts.from, target)) {
+                    logger.debug(`${ target } is equivalent to ${ opts.from }`);
                     continue;
                 }
-                await gitMerge(opts.from);
+                try {
+                    logger.info(`start merge: ${ opts.from } -> ${ target }`);
+                    await gitMerge(opts.from);
+                    logger.info(chalk.green(`successfully merged ${ opts.from } -> ${ target }`));
+                    result.merged.push(target);
+                } catch (e) {
+                    logger.error(`merge fails: ${e.result.stdout.join("\n")}`);
+                    await gitAbortMerge();
+                    result.unmerged.push({
+                        target,
+                        info: e.result
+                    });
+                }
             }
         }
         if (startBranch) {
             await gitCheckout(startBranch);
         }
+        logger.debug(`all targets have been visited!`);
+        return result;
     });
+}
+
+function stripRemote(
+    branchName: string,
+    remotes: string[]
+): string {
+    for (const remote of remotes) {
+        const strip = `remotes/${ remote }/`;
+        if (branchName.startsWith(strip)) {
+            return branchName.substr(strip.length);
+        }
+    }
+    return branchName;
+}
+
+function uniq<T>(a: T[]): T[] {
+    return Array.from(new Set(a));
 }
 
 async function branchesAreEquivalent(
@@ -81,6 +158,14 @@ async function branchesAreEquivalent(
         shas2 = await revParse(b2);
     // TODO: could print out how far ahead one branch is from another
     return arraysAreEqual(shas1, shas2);
+}
+
+async function findRemotes(): Promise<string[]> {
+    const
+        result = await git("remote", "-v"),
+        lines = result.stdout,
+        remoteNames = lines.map(l => l.split(/\s/)[0]);
+    return uniq(remoteNames);
 }
 
 function arraysAreEqual(
@@ -112,19 +197,23 @@ function gitMerge(branch: string): Promise<ProcessResult> {
     return git("merge", branch);
 }
 
+function gitAbortMerge(): Promise<ProcessResult> {
+    return git("merge", "--abort");
+}
+
 function git(...args: string[]): Promise<ProcessResult> {
     return exec("git", args);
 }
 
-async function runIn(
+async function runIn<T>(
     dir: string | undefined,
-    action: AsyncAction) {
+    action: AsyncFunc<T>) {
     const start = process.cwd();
     try {
         if (dir) {
             process.chdir(dir);
         }
-        await action();
+        return await action();
     } finally {
         process.chdir(start);
     }
@@ -160,6 +249,19 @@ async function findCurrentBranch(): Promise<string | undefined> {
         return undefined; // not on a branch; we're detached!
     }
     return result;
+}
+
+async function findBranchWhichIsHeadRef(): Promise<string | undefined> {
+    const
+        all = await listBranchesRaw("*"),
+        headRef = all.map(b => {
+            const match = b.match(/HEAD -> (.*)/);
+            return match
+                ? match[1]
+                : ""
+        }).filter(b => !!b)[0]; // should get something like "origin/master"
+    // we don't want "origin" (or whatever the upstream is called)
+    return headRef.split("/").slice(1).join("/");
 }
 
 async function listBranchesRaw(spec?: string): Promise<string[]> {

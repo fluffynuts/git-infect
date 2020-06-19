@@ -2,7 +2,12 @@
 
 import yargs from "yargs";
 import chalk from "chalk";
-import { gitBroadcast, BroadcastOptions } from "./git-broadcast";
+import { BroadcastOptions, gitBroadcast } from "./git-broadcast";
+import { ConsoleLogger, LogLevel } from "./console-logger";
+
+interface CliOptions extends BroadcastOptions {
+    verbose: boolean;
+}
 
 function parseArgs() {
     return yargs
@@ -10,8 +15,8 @@ function parseArgs() {
             type: "string",
             alias: "f",
             description: "source branch which is to be merged into recipients",
-            default: "origin/master",
-            demandOption: true
+            default: undefined,
+            demandOption: false
         })
         .option("to", {
             type: "string",
@@ -30,13 +35,21 @@ function parseArgs() {
             alias: "i",
             description: "run in the specified folder instead of the current working directory"
         })
+        .option("verbose", {
+            type: "boolean",
+            alias: "v",
+            description: "output more logging info"
+        })
         .help()
-        .argv as unknown as BroadcastOptions; // types out of yargs come out a little... funny
+        .argv as unknown as CliOptions; // types out of yargs come out a little... funny
 }
 
 (async () => {
     try {
         const args = parseArgs();
+        args.logger = args.verbose
+            ? new ConsoleLogger(LogLevel.debug)
+            : new ConsoleLogger(LogLevel.info);
         await gitBroadcast(args);
     } catch (e) {
         if (typeof e !== "string") {

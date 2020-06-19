@@ -1,6 +1,9 @@
 import { spawn, SpawnOptions } from "child_process";
 
 export interface ProcessResult {
+    cmd: string;
+    args: string[];
+    options?: ExecOptions;
     stdout: string[];
     stderr: string[];
     exitCode: number;
@@ -17,12 +20,19 @@ const lineTrimRe = /(\r|\n|\r\n)$/;
 export async function exec(
     cmd: string,
     args: string[],
-    options?: ExecOptions
+    opts?: ExecOptions
 ): Promise<ProcessResult> {
     return new Promise((_resolve, _reject) => {
         let completed = false;
+        const options: ExecOptions = {
+            cwd: process.cwd(),
+            ...opts
+        };
         const
             result: ProcessResult = {
+                cmd,
+                args,
+                options,
                 stdout: [],
                 stderr: [],
                 exitCode: 0,
@@ -67,9 +77,18 @@ export class ExecError extends Error {
         return [
             msg,
             ``,
+            `attempted to run:`,
+            `cmd: ${result.cmd}`,
+            `args: ${JSON.stringify(result.args || [])}`,
+            `opts: ${JSON.stringify(result.options)}`,
             `exit code: ${result.exitCode}`,
+            `stdout:\n${result.stdout.join("\n")}`,
             `stderr:\n${result.stderr.join("\n")}`
         ].join("\n");
+    }
+
+    public get result(): ProcessResult {
+        return this._result;
     }
 
     constructor(private _result: ProcessResult) {
