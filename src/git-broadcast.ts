@@ -1,4 +1,4 @@
-import { exec, ProcessResult } from "./exec";
+import { exec, ExecError, ProcessResult } from "./exec";
 import { Logger } from "./console-logger";
 import { NullLogger } from "./null-logger";
 import * as chalk from "chalk"
@@ -115,7 +115,8 @@ export async function gitBroadcast(
                     logger.info(chalk.green(`successfully merged ${ opts.from } -> ${ target }`));
                     result.merged.push(target);
                 } catch (e) {
-                    logger.error(`merge fails: ${e.result.stdout.join("\n")}`);
+                    const err = e as ExecError;
+                    logger.error(`merge fails: ${err.result.stdout.join("\n")}`);
                     await gitAbortMerge();
                     result.unmerged.push({
                         target,
