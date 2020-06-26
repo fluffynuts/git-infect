@@ -8,6 +8,7 @@ import { promises as fs } from "fs";
 
 describe(`git-broadcast-cli`, () => {
     it(`should do the expected work with provided args`, async () => {
+        jest.setTimeout(10000);
         // Arrange
         const
             sandbox = await Sandbox.create(),

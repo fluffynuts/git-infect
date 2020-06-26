@@ -253,9 +253,11 @@ describe(`git-broadcast`, () => {
             expect(log.latest.message)
                 .toEqual(conflictingMessage);
             expect(result.unmerged)
-                .toContain(jasmine.objectContaining({ target: featureBranch }));
-            expect(logger.errorLogs)
-                .toContain(`failed to merge origin/master into ${featureBranch}`);
+                .toBeArray();
+            expect(result.unmerged)
+                .toHaveLength(1);
+            expect(result.unmerged)
+                .toContainElementLike({ target: featureBranch });
         });
     });
 
