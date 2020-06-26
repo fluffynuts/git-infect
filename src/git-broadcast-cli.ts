@@ -38,7 +38,14 @@ function parseArgs() {
         .option("verbose", {
             type: "boolean",
             alias: "v",
-            description: "output more logging info"
+            description: "output more logging info",
+            default: false
+        })
+        .option("push", {
+            type: "boolean",
+            alias: "p",
+            description: "push successfully-merged branches",
+            default: true
         })
         .help()
         .argv as unknown as CliOptions; // types out of yargs come out a little... funny

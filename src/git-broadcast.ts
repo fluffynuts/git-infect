@@ -9,6 +9,7 @@ export interface BroadcastOptions {
     to?: string[],
     ignoreMissingBranches?: boolean;
     logger?: Logger;
+    push?: boolean
 }
 
 const defaultOptions: BroadcastOptions = {
@@ -16,11 +17,6 @@ const defaultOptions: BroadcastOptions = {
     to: ["*"],
     ignoreMissingBranches: false
 }
-
-function noop() {
-    // intentionally left blank
-}
-
 const currentBranchRe = /^\*\s/;
 
 type AsyncFunc<T> = (() => Promise<T>);
@@ -44,7 +40,7 @@ export async function gitBroadcast(
     const opts = {
         ...defaultOptions,
         ...providedOptions
-    }
+    } as BroadcastOptions;
     const logger = opts.logger ?? new NullLogger();
 
     const result: BroadcastResult = {
@@ -133,6 +129,53 @@ export async function gitBroadcast(
         logger.debug(`all targets have been visited!`);
         return result;
     });
+}
+
+async function tryMerge(
+    logger: Logger,
+    target: string,
+    opts: BroadcastOptions,
+    result: BroadcastResult
+) {
+    if (opts.from === undefined) {
+        throw new Error("");
+    }
+    try {
+        logger.info(`check out target: ${ target }`);
+        await gitCheckout(target);
+    } catch (e) {
+        logger.error(`cannot check out ${ target }; skipping`);
+        // can't check it out; just ignore it? perhaps there's a more
+        // deterministic plan, but for now, this will do
+        // in particular, this is triggered by git branch --list -a *
+        // bringing back the symbolic remotes/origin/HEAD, which isn't something
+        // we'd want to merge into anyway
+        return false;
+    }
+    if (!(await findCurrentBranch())) {
+        logger.error(`can't find current branch!`);
+        return false;
+    }
+    if (await branchesAreEquivalent(opts.from, target)) {
+        logger.debug(`${ target } is equivalent to ${ opts.from }`);
+        return false;
+    }
+    try {
+        logger.info(`start merge: ${ opts.from } -> ${ target }`);
+        await gitMerge(opts.from);
+        logger.info(chalk.green(`successfully merged ${ opts.from } -> ${ target }`));
+        result.merged.push(target);
+    } catch (e) {
+        const
+            err = e as ExecError,
+            message = err.result?.stdout?.join("\n") ?? e.message ?? e;
+        logger.error(`merge fails: ${message}`);
+        await gitAbortMerge();
+        result.unmerged.push({
+            target,
+            info: e.result
+        });
+    }
 }
 
 function stripRemote(

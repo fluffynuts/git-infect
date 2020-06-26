@@ -15,15 +15,17 @@ describe(`git-broadcast`, () => {
     afterEach(async () => await Sandbox.destroyAll());
 
     describe(`when merge succeeds`, () => {
-        it(`should attempt to push on request`, async () => {
+        it(`should push`, async () => {
             // Arrange
             const
                 sandbox = await Sandbox.create(),
                 featureBranch = "feature/stuff",
                 readmeContents = `initial: ${ faker.random.words() }`,
                 updatedContents = `updated: ${ faker.random.words() }`,
+                conflictingContents = `conflict: ${faker.random.words() }`,
                 initialMessage = ":tada: initial commit",
                 updatedMessage = ":memo: prior docs are all wrong!",
+                conflictingMessage = ":fire: conflict!",
                 originPath = await sandbox.mkdir("origin"),
                 localPath = await sandbox.mkdir("local"),
                 origin = Repository.create(originPath);
@@ -38,24 +40,33 @@ describe(`git-broadcast`, () => {
             await local.fetch();
             await local.resetHard("HEAD~1");
             await local.checkout("-b", featureBranch);
+            await sandbox.writeFile("local/readme.md", conflictingContents);
+            await local.commitAll(conflictingMessage);
+            const beforeLog = await local.log();
+            expect(beforeLog.latest.message)
+                .toEqual(conflictingMessage);
 
             const currentContents = await sandbox.readTextFile("local/readme.md");
             expect(currentContents)
-                .toEqual(readmeContents); // should have readme reset
+                .toEqual(conflictingContents); // should have readme updated
+            const logger = new CollectingLogger();
             // Act
-            await gitBroadcast({
+            const result = await gitBroadcast({
                 in: localPath,
-                from: "master",
-                to: ["feature/*"],
-                push: true
-            });
+                logger
+            })
             // Assert
-            await origin.checkout(featureBranch);
+            await local.checkout(featureBranch);
             const log = await local.log();
             expect(log.latest.message)
-                .toEqual(updatedMessage);
+                .toEqual(conflictingMessage);
+            expect(result.unmerged)
+                .toBeArray();
+            expect(result.unmerged)
+                .toHaveLength(1);
+            expect(result.unmerged)
+                .toContainElementLike({ target: featureBranch });
         });
     });
-
 
 });
