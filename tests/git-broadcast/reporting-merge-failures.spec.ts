@@ -15,7 +15,7 @@ describe(`git-broadcast`, () => {
     afterEach(async () => await Sandbox.destroyAll());
 
     describe(`when merge succeeds`, () => {
-        it(`should attempt to push on request`, async () => {
+        it.skip(`should attempt to push on request`, async () => {
             // Arrange
             const
                 sandbox = await Sandbox.create(),

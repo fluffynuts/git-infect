@@ -26,7 +26,7 @@ function parseArgs() {
         })
         .array("to")
         .option("ignore-missing-branches", {
-            type: "boolean",
+            boolean: true,
             default: false,
             description: "when set finding no matches for a particular 'to' glob will not cause an error to be raised"
         })
@@ -36,16 +36,26 @@ function parseArgs() {
             description: "run in the specified folder instead of the current working directory"
         })
         .option("verbose", {
-            type: "boolean",
+            boolean: true,
             alias: "v",
             description: "output more logging info",
             default: false
         })
         .option("push", {
-            type: "boolean",
+            boolean: true,
             alias: "p",
             description: "push successfully-merged branches",
             default: true
+        }).option("git-user", {
+            type: "string",
+            description: "username to use when attempting to push commits"
+        }).option("git-token", {
+            type: "string",
+            description: "token to use as password when pushing commits"
+        }).option("push", {
+            boolean: true,
+            default: false,
+            description: "attempt to push successfully-merged branches when complete (may require git-user and git-token)"
         })
         .help()
         .argv as unknown as CliOptions; // types out of yargs come out a little... funny
