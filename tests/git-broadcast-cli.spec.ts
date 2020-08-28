@@ -8,7 +8,7 @@ import { promises as fs } from "fs";
 
 describe(`git-broadcast-cli`, () => {
     it(`should do the expected work with provided args`, async () => {
-        jest.setTimeout(10000);
+        jest.setTimeout(60000);
         // Arrange
         const
             sandbox = await Sandbox.create(),
@@ -19,7 +19,7 @@ describe(`git-broadcast-cli`, () => {
             updatedMessage = ":memo: prior docs are all wrong!",
             originPath = await sandbox.mkdir("origin"),
             localPath = await sandbox.mkdir("local"),
-            origin = Repository.create(originPath);
+            origin = Repository.createAt(originPath);
         await origin.init();
         await sandbox.writeFile("origin/readme.md", readmeContents);
         await origin.commitAll(initialMessage);

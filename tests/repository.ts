@@ -76,7 +76,13 @@ export class Repository {
         return new Repository(targetPath);
     }
 
-    public static create(at: string) {
+    public static createAt(at: string) {
         return new Repository(path.resolve(at));
+    }
+
+    public static async initAt(at: string): Promise<Repository> {
+        const result = new Repository(path.resolve(at));
+        await result.init();
+        return result;
     }
 }

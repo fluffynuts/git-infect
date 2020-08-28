@@ -14,8 +14,8 @@ describe(`git-broadcast`, () => {
 
     afterEach(async () => await Sandbox.destroyAll());
 
-    describe(`when merge succeeds`, () => {
-        it(`should push`, async () => {
+    describe(`when merge fails`, () => {
+        it(`should report failures`, async () => {
             // Arrange
             const
                 sandbox = await Sandbox.create(),
@@ -28,7 +28,7 @@ describe(`git-broadcast`, () => {
                 conflictingMessage = ":fire: conflict!",
                 originPath = await sandbox.mkdir("origin"),
                 localPath = await sandbox.mkdir("local"),
-                origin = Repository.create(originPath);
+                origin = Repository.createAt(originPath);
             await origin.init();
             await sandbox.writeFile("origin/readme.md", readmeContents);
             await origin.commitAll(initialMessage);
@@ -66,6 +66,7 @@ describe(`git-broadcast`, () => {
                 .toHaveLength(1);
             expect(result.unmerged)
                 .toContainElementLike({ target: featureBranch });
+
         });
     });
 

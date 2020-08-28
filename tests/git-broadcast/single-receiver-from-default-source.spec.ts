@@ -21,7 +21,7 @@ describe(`git-broadcast`, () => {
             updatedMessage = ":memo: prior docs are all wrong!",
             originPath = await sandbox.mkdir("origin"),
             localPath = await sandbox.mkdir("local"),
-            origin = Repository.create(originPath);
+            origin = Repository.createAt(originPath);
         await origin.init();
         await sandbox.writeFile("origin/readme.md", readmeContents);
         await origin.commitAll(initialMessage);

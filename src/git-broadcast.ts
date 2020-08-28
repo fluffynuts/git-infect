@@ -7,6 +7,8 @@ export interface BroadcastOptions {
     in?: string;
     from?: string;
     to?: string[],
+    fromRemote?: string;
+    toRemote?: string;
     ignoreMissingBranches?: boolean;
     logger?: Logger;
     push?: boolean;
@@ -17,7 +19,9 @@ export interface BroadcastOptions {
 const defaultOptions: BroadcastOptions = {
     from: undefined,
     to: ["*"],
-    ignoreMissingBranches: false
+    ignoreMissingBranches: false,
+    fromRemote: "origin",
+    toRemote: "origin"
 }
 const currentBranchRe = /^\*\s/;
 
@@ -39,6 +43,7 @@ export interface BroadcastResult {
     ignoreMissingBranches: boolean
     merged: string[];
     unmerged: FailedMerge[];
+    pushed?: boolean;
 }
 
 export async function gitBroadcast(
@@ -51,6 +56,9 @@ export async function gitBroadcast(
     const logger = opts.logger ?? new NullLogger();
     return await runIn(opts.in, async () => {
         const remotes = await findRemotes();
+        if (remotes.length > 1) {
+            throw new Error("Multiple remotes are not supported (yet)");
+        }
         let startBranch = await findCurrentBranch();
         const headRef = (await findBranchWhichIsHeadRef()) ?? "master";
         if (!startBranch) {
@@ -65,20 +73,22 @@ export async function gitBroadcast(
         if (!opts.from) {
             opts.from = headRef; // await findBestMaster();
         }
-        logger.info(`checking out: ${ opts.from }`)
-        await gitCheckout(opts.from);
-        logger.info(`pulling latest on ${ opts.from }`);
-        await git("pull", "--rebase");
+        // logger.info(`checking out: ${ opts.from }`)
+        // await gitCheckout(opts.from);
+        // logger.info(`pulling latest on ${ opts.from }`);
+        // await git("pull", "--rebase");
+        await git("fetch", "--all");
 
         const result = await tryMergeAll(
             opts,
             remotes,
-            logger);
+            logger
+        );
+
         if (startBranch) {
             await gitCheckout(startBranch);
         }
         logger.debug(`all targets have been visited!`);
-        // TODO: push changes
         return result;
     });
 }
@@ -93,14 +103,21 @@ async function tryMergeAll(
         to: opts.to as string[],
         ignoreMissingBranches: opts.ignoreMissingBranches as boolean,
         merged: [] as string[],
-        unmerged: [] as FailedMerge[]
+        unmerged: [] as FailedMerge[],
+        pushed: undefined
     };
     for (const to of (opts.to || [])) {
         const rawMatches = await matchBranches(to);
         const allTargets = uniq(
             rawMatches
-                .filter(b => b !== opts.from)
+                .filter(b =>
+                    // match branches already locally checked out
+                    !b.startsWith("remote") ||
+                    // match branches from the selected target remote
+                    b.startsWith(`remote/${ opts.toRemote }`)
+                )
                 .map(b => stripRemote(b, remotes))
+                .filter(b => b !== opts.from)
         );
         if (allTargets.length === 0) {
             if (opts.ignoreMissingBranches) {
@@ -114,9 +131,20 @@ async function tryMergeAll(
                 result.unmerged.push(mergeAttempt.unmerged);
             } else if (!!mergeAttempt.merged) {
                 result.merged.push(mergeAttempt.merged);
+                if (opts.push) {
+                    try {
+                        await git("push", opts.toRemote as string, target);
+                        if (result.pushed === undefined) {
+                            result.pushed = true;
+                        }
+                    } catch (e) {
+                        result.pushed = false;
+                    }
+                }
             }
         }
     }
+    result.pushed = !!result.pushed;
     return result;
 }
 
@@ -145,20 +173,23 @@ async function tryMerge(
         logger.error(`can't find current branch!`);
         return result;
     }
-    if (await branchesAreEquivalent(opts.from, target)) {
+    const fullyQualifiedFrom = `${ opts.fromRemote }/${ opts.from }`;
+    if (await branchesAreEquivalent(fullyQualifiedFrom, target)) {
         logger.debug(`${ target } is equivalent to ${ opts.from }`);
         return result;
     }
     try {
-        logger.info(`start merge: ${ opts.from } -> ${ target }`);
-        await gitMerge(opts.from);
+        logger.info(`start merge: ${ fullyQualifiedFrom } -> ${ target }`);
+        await gitMerge(fullyQualifiedFrom);
         logger.info(chalk.green(`successfully merged ${ opts.from } -> ${ target }`));
         result.merged = target;
     } catch (e) {
         const
             err = e as ExecError,
             message = err.result?.stdout?.join("\n") ?? e.message ?? e;
-        logger.error(`merge fails: ${ message }`);
+        logger.error(`
+        merge
+        fails: ${ message }`);
         await gitAbortMerge();
         result.unmerged = {
             target,
@@ -173,7 +204,8 @@ function stripRemote(
     remotes: string[]
 ): string {
     for (const remote of remotes) {
-        const strip = `remotes/${ remote }/`;
+        const strip = `
+        remotes /${ remote }/`;
         if (branchName.startsWith(strip)) {
             return branchName.substr(strip.length);
         }
@@ -225,8 +257,12 @@ async function revParse(branch: string): Promise<string[]> {
     return raw.stdout;
 }
 
-function gitCheckout(branch: string): Promise<ProcessResult> {
-    return git("checkout", branch);
+function gitCheckout(branch: string, asName?: string): Promise<ProcessResult> {
+    if (asName) {
+        return git("checkout", "-b", asName, branch);
+    } else {
+        return git("checkout", branch);
+    }
 }
 
 function gitMerge(branch: string): Promise<ProcessResult> {
@@ -253,25 +289,6 @@ async function runIn<T>(
     } finally {
         process.chdir(start);
     }
-}
-
-async function findBestMaster() {
-    const listing = await matchBranches("*master");
-    const withoutRemotesPrefix = listing
-        .map(
-            l => l.replace(/^remotes\//, "")
-        );
-    const originMaster = withoutRemotesPrefix.find(l => l === "origin/master")
-    if (originMaster) {
-        return originMaster;
-    }
-    const master = withoutRemotesPrefix.find(l => l === "master");
-    if (master) {
-        return master;
-    }
-    throw new Error(
-        `Can't automatically determine which branch to broadcast from (tried origin/master, master). Please specify a from branch.`
-    )
 }
 
 async function findCurrentBranch(): Promise<string | undefined> {
@@ -314,5 +331,6 @@ async function matchBranches(spec: string): Promise<string[]> {
     return result.map(
         // remove the "current branch" marker
         line => line.replace(currentBranchRe, "")
-    ).map(line => line.trim());
+    ).map(line => line.trim())
+        .filter(line => line.indexOf(" -> ") === -1);
 }
