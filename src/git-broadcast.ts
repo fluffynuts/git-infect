@@ -2,6 +2,7 @@ import { exec, ExecError, ProcessResult } from "./exec";
 import { Logger } from "./console-logger";
 import { NullLogger } from "./null-logger";
 import chalk from "chalk"
+import { spawn } from "child_process";
 
 export interface BroadcastOptions {
     in?: string;
@@ -314,9 +315,11 @@ async function findBranchWhichIsHeadRef(): Promise<string | undefined> {
                 : ""
         }).filter(b => !!b)[0]; // should get something like "origin/master"
     if (!headRef) {
+        const foo = await exec("echo", ["'hello, world'"]);
         console.log("no head ref found");
         console.log(JSON.stringify({
-                all
+                all,
+                foo
             }, null, 2)
         );
         throw new Error(`unable to determine HEAD ref`);
