@@ -73,7 +73,10 @@ export async function exec(
         child.stdout?.on("data", d => appendLines(result.stdout, d));
         child.stderr?.on("data", d => appendLines(result.stderr, d));
         child.on("error", e => rejectWith(e));
-        child.on("close", code => code ? rejectWith(code) : resolve());
+        child.on("close", code => {
+            console.log("process close", JSON.stringify(result, null, 2));
+            return code ? rejectWith(code) : resolve();
+        });
     });
 }
 
