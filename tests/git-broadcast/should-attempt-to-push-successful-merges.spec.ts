@@ -11,7 +11,7 @@ describe(`git-broadcast`, () => {
         jest.setTimeout(60000);
     });
 
-    afterEach(async () => await Sandbox.destroyAll());
+    // afterEach(async () => await Sandbox.destroyAll());
 
     describe(`when one branch successfully merged`, () => {
         describe(`merge contains no edits to branch`, () => {
@@ -69,25 +69,72 @@ describe(`git-broadcast`, () => {
             });
         });
 
-        describe.skip(`WIP: when merge edits branch file`, () => {
+        describe(`when merge edits branch file without conflict`, () => {
             it(`should push on request`, async () => {
                 // Arrange
                 const
                     sandbox = await Sandbox.create(),
                     localPath = await sandbox.mkdir("local"),
                     originPath = await sandbox.mkdir("origin"),
-                    branch = "feature/stuff",
+                    featureBranch = "feature/stuff",
+                    originalContent = [
+                        "line 1",
+                        "line 2",
+                        "line 3",
+                    ],
+                    updatedContent = [
+                        "#line 1",
+                        "line 2",
+                        "line 3"
+                    ],
+                    append = "line 4",
+                    expected = updatedContent.concat(append),
+                    logger = new CollectingLogger(),
                     origin = await Repository.initAt(originPath)
                 await sandbox.writeFile("origin/readme.md",
-                    [ "line 1", "line 2", "line 3" ].join("\n")
+                    originalContent.join("\n")
                 );
                 await origin.commitAll(":tada: initial commit");
+
+                // local clone, branch, update existing lines
+                const local = await Repository.clone(originPath, localPath);
+                await local.fetch();
+                await local.checkout("master");
+                await local.checkout("-b", featureBranch)
+                await sandbox.writeFile("local/readme.md",
+                    updatedContent.join("\n")
+                );
+                await local.commitAll(":memo: comment out a line!");
+
+                // upstream changes: appended line
                 await sandbox.appendFile(
                     "origin/readme.md",
-                    "line4"
+                    "\nline 4"
                 );
+                await origin.commitAll(":zap: should merge cleanly");
+
                 // Act
+                const result = await gitBroadcast({
+                    in: localPath,
+                    logger,
+                    push: true
+                })
+
                 // Assert
+                expect(result.unmerged)
+                    .toBeEmptyArray();
+                await local.checkout(featureBranch);
+                const localContents = await sandbox.readTextFile(
+                    "local/readme.md"
+                );
+                expect(localContents.replace(/\r/g, "").split("\n"))
+                    .toEqual(expected)
+                await origin.checkout(featureBranch);
+                const originContents = await sandbox.readTextFile(
+                    "origin/readme.md"
+                );
+                expect(originContents.replace(/\r/g, "").split("\n"))
+                    .toEqual(expected);
             });
         });
     });
