@@ -330,7 +330,7 @@ async function listBranchesRaw(spec?: string): Promise<string[]> {
         spec = "*";
     }
     return (
-        await git("branch", "-a", "--list", spec)
+        await git("branch", "-a", "--list", `'${spec}'`)
     ).stdout;
 }
 
