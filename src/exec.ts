@@ -62,6 +62,11 @@ export async function exec(
                 _reject(new ExecError(trim(result)));
             },
             child = spawn(cmd, args, options as SpawnOptions);
+        console.log("spawned:", {
+            cmd,
+            args: JSON.stringify(args),
+            options: JSON.stringify(options, null, 2)
+        });
         if (!child.stdout) {
             throw new Error(`No stdout acquired for ${ cmd } "${ args.join(", ") }"`);
         }
