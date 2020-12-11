@@ -18,7 +18,7 @@ export interface BroadcastOptions {
 
 const defaultOptions: BroadcastOptions = {
     from: undefined,
-    to: ["*"],
+    to: [ "*" ],
     ignoreMissingBranches: false,
     fromRemote: "origin",
     toRemote: "origin"
@@ -313,6 +313,14 @@ async function findBranchWhichIsHeadRef(): Promise<string | undefined> {
                 ? match[1]
                 : ""
         }).filter(b => !!b)[0]; // should get something like "origin/master"
+    if (!headRef) {
+        console.log("no head ref found");
+        console.log(JSON.stringify({
+                all
+            }, null, 2)
+        );
+        throw new Error(`unable to determine HEAD ref`);
+    }
     // we don't want "origin" (or whatever the upstream is called)
     return headRef.split("/").slice(1).join("/");
 }
