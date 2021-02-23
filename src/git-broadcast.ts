@@ -62,18 +62,21 @@ export async function gitBroadcast(
             throw new Error("Multiple remotes are not supported (yet)");
         }
         let startBranch = await findCurrentBranch();
-        const headRef = (await findBranchWhichIsHeadRef()) ?? "master";
+        debug({
+            startBranch
+        });
+        const defaultBranch = (await findDefaultBranch()) ?? "master";
         if (!startBranch) {
             // can't assume master is the head ref any more
             // -> but can fall back on that as a last resort
-            await git("checkout", headRef);
+            await git("checkout", defaultBranch);
             startBranch = await findCurrentBranch();
         }
         if (!startBranch) {
             throw new Error("don't know where to start from!");
         }
         if (!opts.from) {
-            opts.from = headRef; // await findBestMaster();
+            opts.from = defaultBranch;
         }
         // logger.info(`checking out: ${ opts.from }`)
         // await gitCheckout(opts.from);
@@ -306,7 +309,7 @@ async function findCurrentBranch(): Promise<string | undefined> {
     return result;
 }
 
-async function findBranchWhichIsHeadRef(): Promise<string | undefined> {
+async function findDefaultBranch(): Promise<string | undefined> {
     const
         all = await listBranchesRaw(),
         headRef = all.map(b => {
