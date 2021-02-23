@@ -329,7 +329,7 @@ async function findDefaultBranch(): Promise<string | undefined> {
 
 async function listBranchesRaw(spec?: string): Promise<string[]> {
     const args = [ "branch", "-a", "--list" ];
-    if (spec) {
+    if (spec && spec !== "*") {
         args.push(spec);
     }
     return (
