@@ -48,15 +48,13 @@ export class ConsoleLogger implements Logger {
         this._info = level > LogLevel.info
             ? noop
             : this._makeLogger(console.log.bind(console), chalk.yellow.bind(chalk));
-        this._error = this._makeLogger(console.error, chalk.red.bind(chalk))
+        this._error = this._makeLogger(console.error.bind(console), chalk.red.bind(chalk))
     }
 
     private _makeLogger(logger: LogFunction, colorizer: PassThrough<string>): LogFunction {
         return (...args: any[]) =>
             logger(
-                colorizer(
-                    stringify(args)
-                )
+                ...args.map(a => colorizer(a))
             );
     }
 }

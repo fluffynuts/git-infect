@@ -119,9 +119,8 @@ async function tryMergeAll(
             rawMatches
                 .filter(b =>
                     // match branches already locally checked out
-                    !b.startsWith("remote") ||
+                    !b.startsWith("remotes/") ||
                     // match branches from the selected target remote
-                    b.startsWith(`remote/${ opts.toRemote }`) ||
                     b.startsWith(`remotes/${ opts.toRemote }`)
                 )
                 .map(b => stripRemote(b, remotes))
@@ -218,8 +217,7 @@ function stripRemote(
     remotes: string[]
 ): string {
     for (const remote of remotes) {
-        const strip = `
-        remotes /${ remote }/`;
+        const strip = `remotes/${ remote }/`;
         if (branchName.startsWith(strip)) {
             return branchName.substr(strip.length);
         }
