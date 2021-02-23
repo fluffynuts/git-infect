@@ -121,7 +121,8 @@ async function tryMergeAll(
                     // match branches already locally checked out
                     !b.startsWith("remote") ||
                     // match branches from the selected target remote
-                    b.startsWith(`remote/${ opts.toRemote }`)
+                    b.startsWith(`remote/${ opts.toRemote }`) ||
+                    b.startsWith(`remotes/${ opts.toRemote }`)
                 )
                 .map(b => stripRemote(b, remotes))
                 .filter(b => b !== opts.from)
