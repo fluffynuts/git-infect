@@ -162,7 +162,7 @@ async function tryMerge(
 ): Promise<MergeAttempt> {
     const result = {} as MergeAttempt;
     if (opts.from === undefined) {
-        throw new Error("");
+        throw new Error(`source for broadcast (--from) not specified\n:all options:\n${JSON.stringify(opts, null, 2)}`);
     }
     try {
         logger.info(`check out target: ${ target }`);
