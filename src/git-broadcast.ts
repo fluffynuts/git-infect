@@ -126,6 +126,12 @@ async function tryMergeAll(
                 .map(b => stripRemote(b, remotes))
                 .filter(b => b !== opts.from)
         );
+
+        debug({
+            rawMatches,
+            allTargets
+        });
+
         if (allTargets.length === 0) {
             if (opts.ignoreMissingBranches) {
                 continue;
