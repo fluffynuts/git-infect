@@ -308,7 +308,7 @@ async function findCurrentBranch(): Promise<string | undefined> {
 
 async function findBranchWhichIsHeadRef(): Promise<string | undefined> {
     const
-        all = await listBranchesRaw("*"),
+        all = await listBranchesRaw(),
         headRef = all.map(b => {
             const match = b.match(/HEAD -> (.*)/);
             return match
