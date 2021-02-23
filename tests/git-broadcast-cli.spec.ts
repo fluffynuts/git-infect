@@ -4,7 +4,6 @@ import { Repository } from "./repository";
 import { exec } from "../src/exec";
 import * as path from "path";
 import * as os from "os";
-import { promises as fs } from "fs";
 
 describe(`git-broadcast-cli`, () => {
     it(`should do the expected work with provided args`, async () => {

@@ -4,12 +4,14 @@ import yargs from "yargs";
 import chalk from "chalk";
 import { BroadcastOptions, gitBroadcast } from "./git-broadcast";
 import { ConsoleLogger, LogLevel } from "./console-logger";
+import { dirname, join as joinPath } from "path";
+import { fileExists, readTextFile } from "yafs";
 
 interface CliOptions extends BroadcastOptions {
     verbose: boolean;
 }
 
-function parseArgs() {
+async function parseArgs() {
     return yargs
         .option("from", {
             type: "string",
@@ -21,7 +23,7 @@ function parseArgs() {
         .option("to", {
             type: "string",
             alias: "t",
-            default: ["*"],
+            default: [ "*" ],
             description: "branch, branches or glob (eg feature/*) which will have the source branch merged in"
         })
         .array("to")
@@ -56,14 +58,31 @@ function parseArgs() {
             boolean: true,
             default: false,
             description: "attempt to push successfully-merged branches when complete (may require git-user and git-token)"
-        })
+        }).version(await readVersionInfo())
         .help()
         .argv as unknown as CliOptions; // types out of yargs come out a little... funny
 }
 
+async function readVersionInfo(): Promise<string> {
+    let previous,
+        current = __dirname;
+    while (current !== previous) {
+        const test = joinPath(current, "package.json");
+        if (await fileExists(test)) {
+            const
+                contents = await readTextFile(test),
+                pkg = JSON.parse(contents);
+            return `${pkg.name} ${pkg.version}`;
+        }
+        previous = current;
+        current = dirname(current);
+    }
+    throw new Error(`Can't find package.json, travelling up from ${__dirname}`);
+}
+
 (async () => {
     try {
-        const args = parseArgs();
+        const args = await parseArgs();
         args.logger = args.verbose
             ? new ConsoleLogger(LogLevel.debug)
             : new ConsoleLogger(LogLevel.info);

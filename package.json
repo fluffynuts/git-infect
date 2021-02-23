@@ -1,6 +1,6 @@
 {
   "name": "git-broadcast",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "description": "Utility to merge outwards from one branch to all others, where cleanly possible",
   "main": "dist/git-broadcast.js",
   "files": [
@@ -65,6 +65,7 @@
   "dependencies": {
     "chalk": "^4.0.0",
     "simple-git": "^2.5.0",
+    "yafs": "^1.7.0",
     "yargs": "^15.3.1"
   }
 }
