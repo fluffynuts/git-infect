@@ -1,4 +1,6 @@
 import { spawn, SpawnOptions } from "child_process";
+import { mkdebug } from "./mkdebug";
+const debug = mkdebug(__filename);
 
 export interface ProcessResult {
     cmd: string;
@@ -62,7 +64,7 @@ export async function exec(
                 _reject(new ExecError(trim(result)));
             },
             child = spawn(cmd, args, options as SpawnOptions);
-        console.log("spawned:", {
+        debug("spawned:", {
             cmd,
             args: JSON.stringify(args),
             options: JSON.stringify(options, null, 2)
@@ -74,7 +76,7 @@ export async function exec(
         child.stderr?.on("data", d => appendLines(result.stderr, d));
         child.on("error", e => rejectWith(e));
         child.on("close", code => {
-            console.log("process close", JSON.stringify({
+            debug("process close", JSON.stringify({
                 result
             }, null, 2));
             return code ? rejectWith(code) : resolve();

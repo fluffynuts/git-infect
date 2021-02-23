@@ -2,7 +2,8 @@ import { exec, ExecError, ProcessResult } from "./exec";
 import { Logger } from "./console-logger";
 import { NullLogger } from "./null-logger";
 import chalk from "chalk"
-import { spawn } from "child_process";
+import { mkdebug } from "./mkdebug";
+const debug = mkdebug(__filename);
 
 export interface BroadcastOptions {
     in?: string;
@@ -316,8 +317,8 @@ async function findBranchWhichIsHeadRef(): Promise<string | undefined> {
         }).filter(b => !!b)[0]; // should get something like "origin/master"
     if (!headRef) {
         const foo = await exec("echo", ["'hello, world'"]);
-        console.log("no head ref found");
-        console.log(JSON.stringify({
+        debug("no head ref found");
+        debug(JSON.stringify({
                 all,
                 foo
             }, null, 2)
@@ -329,11 +330,12 @@ async function findBranchWhichIsHeadRef(): Promise<string | undefined> {
 }
 
 async function listBranchesRaw(spec?: string): Promise<string[]> {
-    if (!spec) {
-        spec = "*";
+    const args = ["branch", "-a", "--list"];
+    if (spec) {
+        args.push(spec);
     }
     return (
-        await git("branch", "-a", "--list", `'${spec}'`)
+        await git.apply(null, args)
     ).stdout;
 }
 

@@ -4,6 +4,7 @@ import { Repository } from "./repository";
 import { exec } from "../src/exec";
 import * as path from "path";
 import * as os from "os";
+import { fileExists } from "yafs";
 
 describe(`git-broadcast-cli`, () => {
     it(`should do the expected work with provided args`, async () => {
@@ -59,12 +60,7 @@ describe(`git-broadcast-cli`, () => {
             nodeModulesBin = path.join(packageDir, "node_modules", ".bin"),
             stub = os.platform() === "win32" ? "ts-node.cmd" : "ts-node",
             result = path.join(nodeModulesBin, stub);
-        try {
-            const st = await fs.stat(result);
-            if (!st || !st.isFile()) {
-                throw new Error(`ts-node not found at: "${result}"`);
-            }
-        } catch (e) {
+        if (!await fileExists(result)) {
             throw new Error(`ts-node not found at: "${result}"`);
         }
         return result;
