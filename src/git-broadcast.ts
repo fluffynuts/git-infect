@@ -3,6 +3,7 @@ import { Logger } from "./console-logger";
 import { NullLogger } from "./null-logger";
 import chalk from "chalk"
 import { mkdebug } from "./mkdebug";
+
 const debug = mkdebug(__filename);
 
 export interface BroadcastOptions {
@@ -61,28 +62,29 @@ export async function gitBroadcast(
         if (remotes.length > 1) {
             throw new Error("Multiple remotes are not supported (yet)");
         }
+        if (!opts.from) {
+            opts.from = await findDefaultBranch();
+        }
         let startBranch = await findCurrentBranch();
-        debug({
-            startBranch
-        });
-        const defaultBranch = (await findDefaultBranch()) ?? "master";
         if (!startBranch) {
+            if (!opts.from) {
+                throw new Error(`Cannot determine default branch and no explicit branch set to start from`);
+            }
             // can't assume master is the head ref any more
             // -> but can fall back on that as a last resort
-            await git("checkout", defaultBranch);
+            await git("checkout", opts.from);
             startBranch = await findCurrentBranch();
         }
         if (!startBranch) {
             throw new Error("don't know where to start from!");
         }
-        if (!opts.from) {
-            opts.from = defaultBranch;
+
+        try {
+            // try to unshallow first
+            await git("fetch", "--unshallow");
+        } catch (e) {
+            await git("fetch", "--all");
         }
-        // logger.info(`checking out: ${ opts.from }`)
-        // await gitCheckout(opts.from);
-        // logger.info(`pulling latest on ${ opts.from }`);
-        // await git("pull", "--rebase");
-        await git("fetch", "--all");
 
         const result = await tryMergeAll(
             opts,
@@ -319,21 +321,14 @@ async function findDefaultBranch(): Promise<string | undefined> {
                 : ""
         }).filter(b => !!b)[0]; // should get something like "origin/master"
     if (!headRef) {
-        const foo = await exec("echo", ["'hello, world'"]);
-        debug("no head ref found");
-        debug(JSON.stringify({
-                all,
-                foo
-            }, null, 2)
-        );
-        throw new Error(`unable to determine HEAD ref`);
+        return undefined;
     }
     // we don't want "origin" (or whatever the upstream is called)
     return headRef.split("/").slice(1).join("/");
 }
 
 async function listBranchesRaw(spec?: string): Promise<string[]> {
-    const args = ["branch", "-a", "--list"];
+    const args = [ "branch", "-a", "--list" ];
     if (spec) {
         args.push(spec);
     }
