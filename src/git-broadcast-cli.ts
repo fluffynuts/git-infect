@@ -6,6 +6,8 @@ import { BroadcastOptions, gitBroadcast } from "./git-broadcast";
 import { ConsoleLogger, LogLevel } from "./console-logger";
 import { dirname, join as joinPath } from "path";
 import { fileExists, readTextFile } from "yafs";
+import { mkdebug } from "./mkdebug";
+const debug = mkdebug(__filename);
 
 interface CliOptions extends BroadcastOptions {
     verbose: boolean;
@@ -86,6 +88,9 @@ async function readVersionInfo(): Promise<string> {
         args.logger = args.verbose
             ? new ConsoleLogger(LogLevel.debug)
             : new ConsoleLogger(LogLevel.info);
+        debug({
+            args
+        });
         await gitBroadcast(args);
     } catch (e) {
         if (typeof e !== "string") {
