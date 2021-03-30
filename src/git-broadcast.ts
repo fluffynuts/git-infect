@@ -141,7 +141,7 @@ async function tryMergeAll(
         for (const target of allTargets) {
             const mergeAttempt = await tryMerge(logger, target, opts)
             if (!!mergeAttempt.unmerged) {
-                logger.debug(`adding ${mergeAttempt.unmerged} to the unmerged collection ):`);
+                logger.debug(`adding ${JSON.stringify(mergeAttempt.unmerged)} to the unmerged collection ):`);
                 result.unmerged.push(mergeAttempt.unmerged);
             } else if (!!mergeAttempt.merged) {
                 logger.debug(`adding ${mergeAttempt.merged} to the merged collection (:`);
@@ -150,6 +150,7 @@ async function tryMergeAll(
                     logger.debug(`attempting to push ${target} to ${opts.toRemote}`);
                     try {
                         await git("push", opts.toRemote as string, target);
+                        logger.info(`${target} pushed to ${opts.toRemote}`);
                         if (result.pushedAll === undefined) {
                             result.pushedAll = true;
                         }
@@ -206,9 +207,7 @@ async function tryMerge(
         const
             err = e as ExecError,
             message = err.result?.stdout?.join("\n") ?? e.message ?? e;
-        logger.error(`
-        merge
-        fails: ${ message }`);
+        logger.error(`merge fails: ${ message }`);
         await gitAbortMerge();
         result.unmerged = {
             target,
