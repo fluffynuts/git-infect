@@ -86,6 +86,8 @@ export async function gitBroadcast(
             await git("fetch", "--all");
         }
 
+        clearCaches();
+
         const result = await tryMergeAll(
             opts,
             remotes,
@@ -141,25 +143,25 @@ async function tryMergeAll(
         for (const target of allTargets) {
             const mergeAttempt = await tryMerge(logger, target, opts)
             if (!!mergeAttempt.unmerged) {
-                logger.debug(`adding ${JSON.stringify(mergeAttempt.unmerged)} to the unmerged collection ):`);
+                logger.debug(`adding ${ JSON.stringify(mergeAttempt.unmerged) } to the unmerged collection ):`);
                 result.unmerged.push(mergeAttempt.unmerged);
             } else if (!!mergeAttempt.merged) {
-                logger.debug(`adding ${mergeAttempt.merged} to the merged collection (:`);
+                logger.debug(`adding ${ mergeAttempt.merged } to the merged collection (:`);
                 result.merged.push(mergeAttempt.merged);
                 if (opts.push) {
-                    logger.debug(`attempting to push ${target} to ${opts.toRemote}`);
+                    logger.debug(`attempting to push ${ target } to ${ opts.toRemote }`);
                     try {
                         await git("push", opts.toRemote as string, target);
-                        logger.info(`${target} pushed to ${opts.toRemote}`);
+                        logger.info(`${ target } pushed to ${ opts.toRemote }`);
                         if (result.pushedAll === undefined) {
                             result.pushedAll = true;
                         }
                     } catch (e) {
-                        logger.error(`push of ${target} to ${opts.toRemote} fails: ${e}`);
+                        logger.error(`push of ${ target } to ${ opts.toRemote } fails: ${ e }`);
                         result.pushedAll = false;
                     }
                 } else {
-                    logger.warn(`successful merge of ${target} will NOT be pushed back to ${opts.toRemote} (disabled at cli)`)
+                    logger.warn(`successful merge of ${ target } will NOT be pushed back to ${ opts.toRemote } (disabled at cli)`)
                 }
             }
         }
@@ -175,7 +177,7 @@ async function tryMerge(
 ): Promise<MergeAttempt> {
     const result = {} as MergeAttempt;
     if (opts.from === undefined) {
-        throw new Error(`source for broadcast (--from) not specified\n:all options:\n${JSON.stringify(opts, null, 2)}`);
+        throw new Error(`source for broadcast (--from) not specified\n:all options:\n${ JSON.stringify(opts, null, 2) }`);
     }
     try {
         logger.info(`check out target: ${ target }`);
@@ -338,7 +340,8 @@ async function findDefaultBranch(): Promise<string | undefined> {
 }
 
 const rawBranchResultCache: string[] = [];
-export async function clearCaches() {
+
+export function clearCaches() {
     rawBranchResultCache.splice(0, rawBranchResultCache.length);
 }
 
