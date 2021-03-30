@@ -337,14 +337,25 @@ async function findDefaultBranch(): Promise<string | undefined> {
     return headRef.split("/").slice(1).join("/");
 }
 
+const rawBranchResultCache: string[] = [];
+export async function clearCaches() {
+    rawBranchResultCache.splice(0, rawBranchResultCache.length);
+}
+
 async function listBranchesRaw(spec?: string): Promise<string[]> {
+    if (rawBranchResultCache.length) {
+        return rawBranchResultCache;
+    }
     const args = [ "branch", "-a", "--list" ];
     if (spec && spec !== "*") {
         args.push(spec);
     }
-    return (
+    const result = (
         await git.apply(null, args)
     ).stdout;
+
+    rawBranchResultCache.splice(0, 0, ...result);
+    return result;
 }
 
 async function matchBranches(spec: string): Promise<string[]> {

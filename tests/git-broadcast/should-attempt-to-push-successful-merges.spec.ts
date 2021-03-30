@@ -1,6 +1,6 @@
 import "expect-even-more-jest";
 import { Sandbox } from "filesystem-sandbox";
-import { gitBroadcast } from "../../src/git-broadcast";
+import { clearCaches, gitBroadcast } from "../../src/git-broadcast";
 import { Repository } from "../repository";
 import { CollectingLogger } from "../../src/collecting-logger";
 
@@ -9,6 +9,7 @@ describe(`git-broadcast`, () => {
         // we're doing fs-ops here, give things a little more
         // time (though they generally won't need it)
         jest.setTimeout(60000);
+        clearCaches();
     });
 
     // afterEach(async () => await Sandbox.destroyAll());

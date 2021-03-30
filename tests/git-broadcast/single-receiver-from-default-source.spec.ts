@@ -1,7 +1,7 @@
 import "expect-even-more-jest";
 import { Sandbox } from "filesystem-sandbox";
 import * as faker from "faker";
-import { gitBroadcast } from "../../src/git-broadcast";
+import { clearCaches, gitBroadcast } from "../../src/git-broadcast";
 import { Repository } from "../repository";
 
 describe(`git-broadcast`, () => {
@@ -9,6 +9,7 @@ describe(`git-broadcast`, () => {
         // we're doing fs-ops here, give things a little more
         // time (though they generally won't need it)
         jest.setTimeout(60000);
+        clearCaches();
     });
     it(`should broadcast to a single receiver from the default source`, async () => {
         // Arrange
