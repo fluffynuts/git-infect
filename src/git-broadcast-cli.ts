@@ -92,11 +92,14 @@ async function readVersionInfo(): Promise<string> {
         debug({
             args
         });
-        const result = await gitBroadcast(args);
-        if (args.push &&
-            result.pushedAll === false // any failure to push will set this to exactly false
-        ) {
-            throw new Error(`One or more branches could not be pushed. Please see output above for details.`);
+        const
+            result = await gitBroadcast(args),
+            failedToPush = args.push && result.pushedAll === false,
+            mergeFailed = !!result.unmerged.length,
+            success = !failedToPush && !mergeFailed;
+        if (success) {
+            args.logger.info(`Git broadcast completed successfully!`);
+            return process.exit(0);
         }
     } catch (e) {
         if (typeof e !== "string") {

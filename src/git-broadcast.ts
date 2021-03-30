@@ -5,6 +5,10 @@ import chalk from "chalk"
 import { mkdebug } from "./mkdebug";
 
 const debug = mkdebug(__filename);
+export const unknownAuthor: AuthorDetails = {
+    name: "Unknown",
+    email: "unknown@no-reply.org"
+};
 
 export interface BroadcastOptions {
     in?: string;
@@ -32,6 +36,8 @@ type AsyncFunc<T> = (() => Promise<T>);
 
 interface FailedMerge {
     target: string;
+    authorEmail: string;
+    authorName: string;
     info: ProcessResult
 }
 
@@ -211,12 +217,43 @@ async function tryMerge(
             message = err.result?.stdout?.join("\n") ?? e.message ?? e;
         logger.error(`merge fails: ${ message }`);
         await gitAbortMerge();
+        const authorDetails = await readAuthorDetails();
         result.unmerged = {
             target,
+            authorEmail: authorDetails.name,
+            authorName: authorDetails.email,
             info: e.result
         };
     }
     return result;
+}
+
+export interface AuthorDetails {
+    name: string;
+    email: string;
+}
+
+export function parseAuthorDetailsFrom(line: string): AuthorDetails {
+    const match = line.match(/Author: (.*) <(.*)>/i);
+    if (!match) {
+        return unknownAuthor;
+    }
+    return {
+        name: match[1],
+        email: match[2]
+    };
+}
+
+async function readAuthorDetails(): Promise<AuthorDetails> {
+    const
+        processResult = await git("log", "-1");
+    return (processResult.stdout || []).reduce(
+        (acc, line) => {
+            if (line.toLowerCase().startsWith("author:")) {
+                return parseAuthorDetailsFrom(line);
+            }
+            return acc;
+        }, unknownAuthor);
 }
 
 function stripRemote(
