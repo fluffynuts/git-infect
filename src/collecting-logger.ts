@@ -2,6 +2,7 @@ import { Logger, stringify } from "./console-logger";
 
 export class CollectingLogger implements Logger {
     public debugLogs: string[] = [];
+    public warnLogs: string[] = [];
     public errorLogs: string[] = [];
     public infoLogs: string[] = [];
 
@@ -15,5 +16,9 @@ export class CollectingLogger implements Logger {
 
     info(...args: any[]): void {
         this.infoLogs.push(stringify(args));
+    }
+
+    warn(...args: any[]): void {
+        this.warnLogs.push(stringify(args));
     }
 }

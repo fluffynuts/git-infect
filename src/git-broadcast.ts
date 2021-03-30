@@ -46,7 +46,7 @@ export interface BroadcastResult {
     ignoreMissingBranches: boolean
     merged: string[];
     unmerged: FailedMerge[];
-    pushed?: boolean;
+    pushedAll?: boolean;
 }
 
 export async function gitBroadcast(
@@ -111,7 +111,7 @@ async function tryMergeAll(
         ignoreMissingBranches: opts.ignoreMissingBranches as boolean,
         merged: [] as string[],
         unmerged: [] as FailedMerge[],
-        pushed: undefined
+        pushedAll: undefined
     };
     for (const to of (opts.to || [])) {
         const rawMatches = await matchBranches(to);
@@ -141,23 +141,29 @@ async function tryMergeAll(
         for (const target of allTargets) {
             const mergeAttempt = await tryMerge(logger, target, opts)
             if (!!mergeAttempt.unmerged) {
+                logger.debug(`adding ${mergeAttempt.unmerged} to the unmerged collection ):`);
                 result.unmerged.push(mergeAttempt.unmerged);
             } else if (!!mergeAttempt.merged) {
+                logger.debug(`adding ${mergeAttempt.merged} to the merged collection (:`);
                 result.merged.push(mergeAttempt.merged);
                 if (opts.push) {
+                    logger.debug(`attempting to push ${target} to ${opts.toRemote}`);
                     try {
                         await git("push", opts.toRemote as string, target);
-                        if (result.pushed === undefined) {
-                            result.pushed = true;
+                        if (result.pushedAll === undefined) {
+                            result.pushedAll = true;
                         }
                     } catch (e) {
-                        result.pushed = false;
+                        logger.error(`push of ${target} to ${opts.toRemote} fails: ${e}`);
+                        result.pushedAll = false;
                     }
+                } else {
+                    logger.warn(`successful merge of ${target} will NOT be pushed back to ${opts.toRemote} (disabled at cli)`)
                 }
             }
         }
     }
-    result.pushed = !!result.pushed;
+    result.pushedAll = !!result.pushedAll;
     return result;
 }
 

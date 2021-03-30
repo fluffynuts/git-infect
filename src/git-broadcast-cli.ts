@@ -7,6 +7,7 @@ import { ConsoleLogger, LogLevel } from "./console-logger";
 import { dirname, join as joinPath } from "path";
 import { fileExists, readTextFile } from "yafs";
 import { mkdebug } from "./mkdebug";
+
 const debug = mkdebug(__filename);
 
 interface CliOptions extends BroadcastOptions {
@@ -74,12 +75,12 @@ async function readVersionInfo(): Promise<string> {
             const
                 contents = await readTextFile(test),
                 pkg = JSON.parse(contents);
-            return `${pkg.name} ${pkg.version}`;
+            return `${ pkg.name } ${ pkg.version }`;
         }
         previous = current;
         current = dirname(current);
     }
-    throw new Error(`Can't find package.json, travelling up from ${__dirname}`);
+    throw new Error(`Can't find package.json, travelling up from ${ __dirname }`);
 }
 
 (async () => {
@@ -91,7 +92,12 @@ async function readVersionInfo(): Promise<string> {
         debug({
             args
         });
-        await gitBroadcast(args);
+        const result = await gitBroadcast(args);
+        if (args.push &&
+            result.pushedAll === false // any failure to push will set this to exactly false
+        ) {
+            throw new Error(`One or more branches could not be pushed. Please see output above for details.`);
+        }
     } catch (e) {
         if (typeof e !== "string") {
             if (e.stack) {

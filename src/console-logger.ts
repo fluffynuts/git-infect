@@ -5,6 +5,7 @@ type PassThrough<T> = (o: T) => T;
 
 export interface Logger {
     info: LogFunction;
+    warn: LogFunction;
     error: LogFunction;
     debug: LogFunction;
 }
@@ -12,7 +13,8 @@ export interface Logger {
 export enum LogLevel {
     debug = 0,
     info = 1,
-    error = 2
+    warn = 2,
+    error = 3
 }
 
 function noop() {
@@ -45,6 +47,10 @@ export class ConsoleLogger implements Logger {
         return this._error;
     }
 
+    public get warn() {
+        return this._warn;
+    }
+
     public get info() {
         return this._info;
     }
@@ -58,6 +64,7 @@ export class ConsoleLogger implements Logger {
     }
 
     private readonly _error: LogFunction;
+    private readonly _warn: LogFunction;
     private readonly _info: LogFunction;
     private readonly _debug: LogFunction;
 
@@ -76,6 +83,9 @@ export class ConsoleLogger implements Logger {
         this._info = level > LogLevel.info
             ? noop
             : this._makeLogger(console.log.bind(console), chalk.yellow.bind(chalk), "INFO");
+        this._warn = level > LogLevel.warn
+            ? noop
+            : this._makeLogger(console.warn.bind(console), chalk.magenta.bind(chalk), "WARN");
         this._error = this._makeLogger(console.error.bind(console), chalk.red.bind(chalk), "ERROR")
     }
 

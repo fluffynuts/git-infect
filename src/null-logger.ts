@@ -12,4 +12,8 @@ export class NullLogger implements Logger {
     info(): void {
         // intentionally does nothing
     }
+
+    warn(args: any): void {
+        // intentionally does nothing
+    }
 }
