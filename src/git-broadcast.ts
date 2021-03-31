@@ -34,15 +34,19 @@ const currentBranchRe = /^\*\s/;
 
 type AsyncFunc<T> = (() => Promise<T>);
 
-interface FailedMerge {
+export interface MergeInfo {
     target: string;
     authorEmail: string;
     authorName: string;
-    info: ProcessResult
+    pushed: boolean;
+}
+
+export interface FailedMerge extends MergeInfo {
+    processResult: ProcessResult
 }
 
 export interface MergeAttempt {
-    merged?: string;
+    merged?: MergeInfo;
     unmerged?: FailedMerge;
 }
 
@@ -50,7 +54,7 @@ export interface BroadcastResult {
     from: string;
     to: string[];
     ignoreMissingBranches: boolean
-    merged: string[];
+    merged: MergeInfo[];
     unmerged: FailedMerge[];
     pushedAll?: boolean;
 }
@@ -117,7 +121,7 @@ async function tryMergeAll(
         from: opts.from as string,
         to: opts.to as string[],
         ignoreMissingBranches: opts.ignoreMissingBranches as boolean,
-        merged: [] as string[],
+        merged: [] as MergeInfo[],
         unmerged: [] as FailedMerge[],
         pushedAll: undefined
     };
@@ -158,6 +162,7 @@ async function tryMergeAll(
                     logger.debug(`attempting to push ${ target } to ${ opts.toRemote }`);
                     try {
                         await git("push", opts.toRemote as string, target);
+                        mergeAttempt.merged.pushed = true;
                         logger.info(`${ target } pushed to ${ opts.toRemote }`);
                         if (result.pushedAll === undefined) {
                             result.pushedAll = true;
@@ -206,26 +211,45 @@ async function tryMerge(
         logger.debug(`${ target } is equivalent to ${ opts.from }`);
         return result;
     }
+    const
+        authorDetails = await readAuthorDetailsForLatestCommit(),
+        authorEmail = authorDetails.email,
+        authorName = authorDetails.name;
     try {
         logger.info(`start merge: ${ fullyQualifiedFrom } -> ${ target }`);
         await gitMerge(fullyQualifiedFrom);
         logger.info(chalk.green(`successfully merged ${ opts.from } -> ${ target }`));
-        result.merged = target;
+        result.merged = {
+            target,
+            authorEmail,
+            authorName,
+            pushed: false
+        };
     } catch (e) {
         const
             err = e as ExecError,
             message = err.result?.stdout?.join("\n") ?? e.message ?? e;
         logger.error(`merge fails: ${ message }`);
-        await gitAbortMerge();
-        const authorDetails = await readAuthorDetails();
+        await tryDo(async () =>
+            await gitAbortMerge()
+        );
         result.unmerged = {
             target,
-            authorEmail: authorDetails.name,
-            authorName: authorDetails.email,
-            info: e.result
+            authorEmail,
+            authorName,
+            pushed: false,
+            processResult: e.result
         };
     }
     return result;
+}
+
+async function tryDo<T>(asyncAction: () => Promise<T>): Promise<T | void> {
+    try {
+        return await asyncAction();
+    } catch (e) {
+        // suppress
+    }
 }
 
 export interface AuthorDetails {
@@ -244,7 +268,7 @@ export function parseAuthorDetailsFrom(line: string): AuthorDetails {
     };
 }
 
-async function readAuthorDetails(): Promise<AuthorDetails> {
+async function readAuthorDetailsForLatestCommit(): Promise<AuthorDetails> {
     const
         processResult = await git("log", "-1");
     return (processResult.stdout || []).reduce(
@@ -313,12 +337,8 @@ async function revParse(branch: string): Promise<string[]> {
     return raw.stdout;
 }
 
-function gitCheckout(branch: string, asName?: string): Promise<ProcessResult> {
-    if (asName) {
-        return git("checkout", "-b", asName, branch);
-    } else {
-        return git("checkout", branch);
-    }
+function gitCheckout(branch: string): Promise<ProcessResult> {
+    return git("checkout", "-f", branch);
 }
 
 function gitMerge(branch: string): Promise<ProcessResult> {
