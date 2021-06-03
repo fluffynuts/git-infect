@@ -23,7 +23,7 @@ export function makeConstruction(
 export function makeSuccess(
     fn: LogPrefixer
 ): StringMutator {
-    return makePrefixer(fn, "✔");
+    return makePrefixer(fn, "✅");
 }
 
 export function makeFail(

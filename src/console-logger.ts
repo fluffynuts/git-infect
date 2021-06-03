@@ -85,10 +85,10 @@ export class ConsoleLogger implements Logger {
             : this._makeLogger(console.log.bind(console), chalk.yellow.bind(chalk), "INFO");
         this._warn = level > LogLevel.warn
             ? noop
-            : this._makeLogger(console.warn.bind(console), chalk.magenta.bind(chalk), "WARN");
+            : this._makeLogger(console.log.bind(console), chalk.magenta.bind(chalk), "WARN");
         // if we bind to console.error, then the consumer has to redirect stderr to catch error
         // messages in a piped application (eg slack-webhook-say)
-        this._error = this._makeLogger(console.warn.bind(console), chalk.red.bind(chalk), "ERROR")
+        this._error = this._makeLogger(console.log.bind(console), chalk.red.bind(chalk), "ERROR")
     }
 
     private _makeLogger(
