@@ -2,6 +2,7 @@
 export * from "./collecting-logger";
 export * from "./console-logger";
 export * from "./exec";
+export * from "./git-broadcast-cli";
 export * from "./git-broadcast";
 export * from "./index";
 export * from "./mkdebug";
