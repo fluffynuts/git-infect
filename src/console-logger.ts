@@ -1,6 +1,6 @@
 import chalk from "chalk";
 
-type LogFunction = (...args: any[]) => void;
+export type LogFunction = (...args: any[]) => void;
 type PassThrough<T> = (o: T) => T;
 
 export interface Logger {
@@ -86,7 +86,9 @@ export class ConsoleLogger implements Logger {
         this._warn = level > LogLevel.warn
             ? noop
             : this._makeLogger(console.warn.bind(console), chalk.magenta.bind(chalk), "WARN");
-        this._error = this._makeLogger(console.error.bind(console), chalk.red.bind(chalk), "ERROR")
+        // if we bind to console.error, then the consumer has to redirect stderr to catch error
+        // messages in a piped application (eg slack-webhook-say)
+        this._error = this._makeLogger(console.warn.bind(console), chalk.red.bind(chalk), "ERROR")
     }
 
     private _makeLogger(

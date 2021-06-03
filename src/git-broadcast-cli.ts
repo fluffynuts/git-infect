@@ -1,5 +1,8 @@
 #!/usr/bin/env node
-
+if (typeof jest !== "undefined") {
+    console.error("git-broadcast-cli has been imported into a test!");
+    process.exit(1);
+}
 import chalk from "chalk";
 import { gitBroadcast } from "./git-broadcast";
 import { ConsoleLogger, LogLevel } from "./console-logger";
@@ -15,6 +18,9 @@ const debug = mkdebug(__filename);
         args.logger = args.verbose
             ? new ConsoleLogger(LogLevel.debug)
             : new ConsoleLogger(LogLevel.info);
+        if (args.pretty) {
+            args.logPrefixer = (prefix: string, message: string) => `${prefix} ${message}`;
+        }
         debug({
             args
         });
@@ -23,7 +29,7 @@ const debug = mkdebug(__filename);
             failedToPush = args.push && result.pushedAll === false,
             mergeFailed = !!result.unmerged.length,
             success = !failedToPush && !mergeFailed;
-        if (args.printSummary) {
+        if (args["print-summary"]) {
             const summaryLines = createSummary(result)
             summaryLines.forEach(line => console.log(line));
         }

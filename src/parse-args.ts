@@ -4,7 +4,8 @@ import { readVersionInfo } from "./read-version-info";
 
 export interface CliOptions extends BroadcastOptions {
     verbose: boolean;
-    printSummary: boolean;
+    "print-summary": boolean;
+    "pretty": boolean;
 }
 
 export async function parseArgs() {
@@ -19,12 +20,12 @@ export async function parseArgs() {
         .option("to", {
             type: "string",
             alias: "t",
-            default: [ "*" ],
+            default: "*",
             description: "branch, branches or glob (eg feature/*) which will have the source branch merged in"
         })
         .array("to")
         .option("ignore-missing-branches", {
-            boolean: true,
+            type: "boolean",
             default: false,
             description: "when set finding no matches for a particular 'to' glob will not cause an error to be raised"
         })
@@ -34,13 +35,13 @@ export async function parseArgs() {
             description: "run in the specified folder instead of the current working directory"
         })
         .option("verbose", {
-            boolean: true,
+            type: "boolean",
             alias: "v",
             description: "output more logging info",
             default: false
         })
         .option("push", {
-            boolean: true,
+            type: "boolean",
             alias: "p",
             description: "push successfully-merged branches",
             default: true
@@ -51,15 +52,19 @@ export async function parseArgs() {
             type: "string",
             description: "token to use as password when pushing commits"
         }).option("push", {
-            boolean: true,
+            type: "boolean",
             default: false,
             description: "attempt to push successfully-merged branches when complete (may require git-user and git-token)"
         }).option("print-summary", {
-            boolean: true,
+            type: "boolean",
             default: false,
             description: "print out a summary of operations at the end - useful for piping into another process, eg a notifier"
+        }).option("pretty", {
+            type: "boolean",
+            default: false,
+            description: "enable emoji and other formatting like back-ticks - nice if you're forwarding on to somewhere to display, eg slack"
         })
         .version(await readVersionInfo())
         .help()
-        .argv as unknown as CliOptions; // types out of yargs come out a little... funny
+        .argv as CliOptions; // types out of yargs come out a little... funny
 }

@@ -3,12 +3,15 @@ import { Logger } from "./console-logger";
 import { NullLogger } from "./null-logger";
 import chalk from "chalk"
 import { mkdebug } from "./mkdebug";
+import { makeConstruction, makeFail, makeInfo, makeOk, makeSuccess, makeWarn } from "./prefixers";
 
 const debug = mkdebug(__filename);
 export const unknownAuthor: AuthorDetails = {
     name: "Unknown",
     email: "unknown@no-reply.org"
 };
+
+export type LogPrefixer = (prefix: string, message: string) => string;
 
 export interface BroadcastOptions {
     in?: string;
@@ -18,6 +21,7 @@ export interface BroadcastOptions {
     toRemote?: string;
     ignoreMissingBranches?: boolean;
     logger?: Logger;
+    logPrefixer?: LogPrefixer,
     push?: boolean;
     gitUser?: string;
     gitToken?: string;
@@ -28,11 +32,16 @@ const defaultOptions: BroadcastOptions = {
     to: [ "*" ],
     ignoreMissingBranches: false,
     fromRemote: "origin",
-    toRemote: "origin"
+    toRemote: "origin",
+    logPrefixer: dropPrefixAndFormatting
 }
 const currentBranchRe = /^\*\s/;
 
 type AsyncFunc<T> = (() => Promise<T>);
+
+export function dropPrefixAndFormatting(prefix: string, message: string): string {
+    return message.replace(/`/g, "");
+}
 
 export interface MergeInfo {
     target: string;
@@ -68,6 +77,9 @@ export async function gitBroadcast(
     } as BroadcastOptions;
     const logger = opts.logger ?? new NullLogger();
     return await runIn(opts.in, async () => {
+        if (!opts.logPrefixer) {
+            opts.logPrefixer = dropPrefixAndFormatting;
+        }
         const remotes = await findRemotes();
         if (remotes.length > 1) {
             throw new Error("Multiple remotes are not supported (yet)");
@@ -107,7 +119,8 @@ export async function gitBroadcast(
         if (startBranch) {
             await gitCheckout(startBranch);
         }
-        logger.debug(`all targets have been visited!`);
+        const ok = makeOk(opts.logPrefixer || dropPrefixAndFormatting);
+        logger.debug(ok(`all targets have been visited!`));
         return result;
     });
 }
@@ -150,29 +163,39 @@ async function tryMergeAll(
             }
             throw new Error(`Can't match branch spec '${ to }'`);
         }
+        const
+            prefixer = opts.logPrefixer || dropPrefixAndFormatting,
+            info = makeInfo(prefixer),
+            fail = makeFail(prefixer),
+            warn = makeWarn(prefixer),
+            success = makeSuccess(prefixer);
         for (const target of allTargets) {
             const mergeAttempt = await tryMerge(logger, target, opts)
             if (!!mergeAttempt.unmerged) {
-                logger.debug(`adding ${ JSON.stringify(mergeAttempt.unmerged) } to the unmerged collection ):`);
+                logger.debug(info(`adding ${ JSON.stringify(mergeAttempt.unmerged) } to the unmerged collection ):`));
                 result.unmerged.push(mergeAttempt.unmerged);
             } else if (!!mergeAttempt.merged) {
-                logger.debug(`adding ${ mergeAttempt.merged } to the merged collection (:`);
+                logger.debug(info(`adding ${ mergeAttempt.merged } to the merged collection (:`));
                 result.merged.push(mergeAttempt.merged);
                 if (opts.push) {
-                    logger.debug(`attempting to push ${ target } to ${ opts.toRemote }`);
+                    logger.debug(info(`attempting to push ${ target } to ${ opts.toRemote }`));
                     try {
                         await git("push", opts.toRemote as string, target);
                         mergeAttempt.merged.pushed = true;
-                        logger.info(`${ target } pushed to ${ opts.toRemote }`);
+                        logger.info(success(`\`${ opts.from }\` merged into \`${ target }\` and pushed to \`${ opts.toRemote }\``));
                         if (result.pushedAll === undefined) {
                             result.pushedAll = true;
                         }
                     } catch (e) {
-                        logger.error(`push of ${ target } to ${ opts.toRemote } fails: ${ e }`);
+                        logger.error(fail(`push of ${ target } to ${ opts.toRemote } fails: ${ e }`));
                         result.pushedAll = false;
                     }
                 } else {
-                    logger.warn(`successful merge of ${ target } will NOT be pushed back to ${ opts.toRemote } (disabled at cli)`)
+                    logger.warn(warn(`successful merge of ${
+                        target
+                    } will NOT be pushed back to ${
+                        opts.toRemote
+                    } (disabled at cli)`));
                 }
             }
         }
@@ -190,11 +213,19 @@ async function tryMerge(
     if (opts.from === undefined) {
         throw new Error(`source for broadcast (--from) not specified\n:all options:\n${ JSON.stringify(opts, null, 2) }`);
     }
+    const
+        prefixer = opts.logPrefixer || dropPrefixAndFormatting,
+        info = makeInfo(prefixer),
+        ok = makeOk(prefixer),
+        construction = makeConstruction(prefixer),
+        success = makeSuccess(prefixer),
+        error = makeFail(prefixer);
+
     try {
-        logger.info(`check out target: ${ target }`);
+        logger.debug(info(`check out target: ${ target }`));
         await gitCheckout(target);
     } catch (e) {
-        logger.error(`cannot check out ${ target }; skipping`);
+        logger.error(error(`cannot check out ${ target }; skipping`));
         // can't check it out; just ignore it? perhaps there's a more
         // deterministic plan, but for now, this will do
         // in particular, this is triggered by git branch --list -a *
@@ -203,12 +234,12 @@ async function tryMerge(
         return result;
     }
     if (!(await findCurrentBranch())) {
-        logger.error(`can't find current branch!`);
+        logger.error(error(`can't find current branch!`));
         return result;
     }
     const fullyQualifiedFrom = `${ opts.fromRemote }/${ opts.from }`;
     if (await branchesAreEquivalent(fullyQualifiedFrom, target)) {
-        logger.debug(`${ target } is equivalent to ${ opts.from }`);
+        logger.debug(ok(`${ target } is equivalent to ${ opts.from }`));
         return result;
     }
     const
@@ -216,9 +247,9 @@ async function tryMerge(
         authorEmail = authorDetails.email,
         authorName = authorDetails.name;
     try {
-        logger.info(`start merge: ${ fullyQualifiedFrom } -> ${ target }`);
+        logger.debug(construction(`start merge: ${ fullyQualifiedFrom } -> ${ target }`));
         await gitMerge(fullyQualifiedFrom);
-        logger.info(chalk.green(`successfully merged ${ opts.from } -> ${ target }`));
+        logger.debug(success(`successfully merged ${ opts.from } -> ${ target }`));
         result.merged = {
             target,
             authorEmail,
@@ -229,7 +260,7 @@ async function tryMerge(
         const
             err = e as ExecError,
             message = err.result?.stdout?.join("\n") ?? e.message ?? e;
-        logger.error(`merge fails: ${ message }`);
+        logger.error(error(`merge fails: ${ message }`));
         await tryDo(async () =>
             await gitAbortMerge()
         );
