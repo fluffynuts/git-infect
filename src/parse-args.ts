@@ -6,6 +6,7 @@ export interface CliOptions extends BroadcastOptions {
     verbose: boolean;
     "print-summary": boolean;
     "pretty": boolean;
+    "show-version": boolean;
 }
 
 export async function parseArgs() {
@@ -63,6 +64,10 @@ export async function parseArgs() {
             type: "boolean",
             default: false,
             description: "enable emoji and other formatting like back-ticks - nice if you're forwarding on to somewhere to display, eg slack"
+        }).option("show-version", {
+            type: "boolean",
+            default: true,
+            description: "show the version of git-broadcast during normal operations"
         })
         .version(await readVersionInfo())
         .help()

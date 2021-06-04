@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { readVersionInfo } from "./read-version-info";
+
 if (typeof jest !== "undefined") {
     console.error("git-broadcast-cli has been imported into a test!");
     process.exit(1);
@@ -15,6 +17,9 @@ const debug = mkdebug(__filename);
 (async () => {
     try {
         const args = await parseArgs();
+        if (args["show-version"]) {
+            console.log(`git-broadcast ${await readVersionInfo()}`);
+        }
         args.logger = args.verbose
             ? new ConsoleLogger(LogLevel.debug)
             : new ConsoleLogger(LogLevel.info);
