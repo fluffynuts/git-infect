@@ -11,5 +11,4 @@ export * from "./parse-args";
 export * from "./prefixers";
 export * from "./read-version-info";
 export * from "./summary";
-export * from "./truncate-long-output";
 export * from "./types";
