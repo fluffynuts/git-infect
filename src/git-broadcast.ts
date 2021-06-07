@@ -3,7 +3,6 @@ import { Logger } from "./console-logger";
 import { NullLogger } from "./null-logger";
 import { mkdebug } from "./mkdebug";
 import { makeConstruction, makeFail, makeInfo, makeOk, makeSuccess, makeWarn } from "./prefixers";
-import { truncateLongOutput } from "./truncate-long-output";
 import { BroadcastOptions } from "./types";
 
 const debug = mkdebug(__filename);
@@ -255,7 +254,8 @@ async function tryMerge(
             pushed: false
         };
     } catch (e) {
-        logError(e as ExecError, opts, logger);
+        logger.error(fail(`could not merge ${ opts.from } -> ${ target } (see stderr logging for details)`));
+        logError(e as ExecError);
         await tryDo(async () =>
             await gitAbortMerge()
         );
@@ -271,35 +271,23 @@ async function tryMerge(
 }
 
 function logError(
-    e: ExecError,
-    opts: BroadcastOptions,
-    logger: Logger
+    e: ExecError
 ) {
-    logLimited(e.result?.stdout, opts, logger);
-    logLimited(e.result?.stderr, opts, logger);
+    logLimited(e.result?.stdout);
+    logLimited(e.result?.stderr);
     if (e.result !== undefined) {
         return;
     }
-    logger.error(e.message || `${ e }`);
+    logLimited([ e.message || `${ e }` ]);
 }
 
 function logLimited(
-    lines: string[] | undefined,
-    opts: BroadcastOptions,
-    logger: Logger
+    lines: string[] | undefined
 ) {
     if (lines === undefined) {
         return;
     }
-    const { primary, secondary } = truncateLongOutput(
-        lines,
-        opts
-    );
-    primary.forEach(line => logger.error(line));
-    if (secondary.length) {
-        logger.error("(output truncated, please check logging to stderr for more information)");
-        secondary.forEach(line => console.error(line));
-    }
+    lines.forEach(line => console.error(line));
 }
 
 async function tryDo<T>(asyncAction: () => Promise<T>): Promise<T | void> {
