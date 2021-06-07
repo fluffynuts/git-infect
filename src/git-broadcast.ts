@@ -254,7 +254,7 @@ async function tryMerge(
             pushed: false
         };
     } catch (e) {
-        logger.error(fail(`could not merge ${ opts.from } -> ${ target } (see stderr logging for details)`));
+        logger.error(fail(`could not merge \`${ opts.from }\` -> \`${ target }\` (see stderr logging for details)`));
         logError(e as ExecError);
         await tryDo(async () =>
             await gitAbortMerge()
