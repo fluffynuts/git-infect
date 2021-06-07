@@ -1,5 +1,5 @@
 import yargs from "yargs";
-import { BroadcastOptions } from "./git-broadcast";
+import { BroadcastOptions } from "./types";
 import { readVersionInfo } from "./read-version-info";
 
 export interface CliOptions extends BroadcastOptions {

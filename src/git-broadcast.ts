@@ -1,9 +1,10 @@
 import { exec, ExecError, ProcessResult } from "./exec";
 import { Logger } from "./console-logger";
 import { NullLogger } from "./null-logger";
-import chalk from "chalk"
 import { mkdebug } from "./mkdebug";
 import { makeConstruction, makeFail, makeInfo, makeOk, makeSuccess, makeWarn } from "./prefixers";
+import { truncateLongOutput } from "./truncate-long-output";
+import { BroadcastOptions } from "./types";
 
 const debug = mkdebug(__filename);
 export const unknownAuthor: AuthorDetails = {
@@ -11,29 +12,14 @@ export const unknownAuthor: AuthorDetails = {
     email: "unknown@no-reply.org"
 };
 
-export type LogPrefixer = (prefix: string, message: string) => string;
-
-export interface BroadcastOptions {
-    in?: string;
-    from?: string;
-    to?: string[],
-    fromRemote?: string;
-    toRemote?: string;
-    ignoreMissingBranches?: boolean;
-    logger?: Logger;
-    logPrefixer?: LogPrefixer,
-    push?: boolean;
-    gitUser?: string;
-    gitToken?: string;
-}
-
 const defaultOptions: BroadcastOptions = {
     from: undefined,
     to: [ "*" ],
     ignoreMissingBranches: false,
     fromRemote: "origin",
     toRemote: "origin",
-    logPrefixer: dropPrefixAndFormatting
+    logPrefixer: dropPrefixAndFormatting,
+    maxErrorLines: 10
 }
 const currentBranchRe = /^\*\s/;
 
@@ -122,6 +108,7 @@ export async function gitBroadcast(
 }
 
 let haveFetchedAll = false;
+
 async function fetchAll() {
     if (haveFetchedAll) {
         return;
@@ -268,10 +255,7 @@ async function tryMerge(
             pushed: false
         };
     } catch (e) {
-        const
-            err = e as ExecError,
-            message = err.result?.stdout?.join("\n") ?? e.message ?? e;
-        logger.error(error(`merge fails: ${ message }`));
+        logError(e as ExecError, opts, logger);
         await tryDo(async () =>
             await gitAbortMerge()
         );
@@ -284,6 +268,38 @@ async function tryMerge(
         };
     }
     return result;
+}
+
+function logError(
+    e: ExecError,
+    opts: BroadcastOptions,
+    logger: Logger
+) {
+    logLimited(e.result?.stdout, opts, logger);
+    logLimited(e.result?.stderr, opts, logger);
+    if (e.result !== undefined) {
+        return;
+    }
+    logger.error(e.message || `${ e }`);
+}
+
+function logLimited(
+    lines: string[] | undefined,
+    opts: BroadcastOptions,
+    logger: Logger
+) {
+    if (lines === undefined) {
+        return;
+    }
+    const { primary, secondary } = truncateLongOutput(
+        lines,
+        opts
+    );
+    primary.forEach(line => logger.error(line));
+    if (secondary.length) {
+        logger.error("(output truncated, please check logging to stderr for more information)");
+        secondary.forEach(line => console.error(line));
+    }
 }
 
 async function tryDo<T>(asyncAction: () => Promise<T>): Promise<T | void> {

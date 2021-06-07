@@ -1,4 +1,5 @@
-import { LogPrefixer } from "./git-broadcast";
+import { LogPrefixer } from "./types";
+
 export type StringMutator = (input: string) => string;
 
 export function makePrefixer(

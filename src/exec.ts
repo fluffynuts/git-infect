@@ -1,5 +1,6 @@
 import { spawn, SpawnOptions } from "child_process";
 import { mkdebug } from "./mkdebug";
+
 const debug = mkdebug(__filename);
 
 export interface ProcessResult {
@@ -90,12 +91,12 @@ export class ExecError extends Error {
             msg,
             ``,
             `attempted to run:`,
-            `cmd: ${result.cmd}`,
-            `args: ${JSON.stringify(result.args || [])}`,
-            `opts: ${JSON.stringify(result.options)}`,
-            `exit code: ${result.exitCode}`,
-            `stdout:\n${result.stdout.join("\n")}`,
-            `stderr:\n${result.stderr.join("\n")}`
+            `cmd: ${ result.cmd }`,
+            `args: ${ JSON.stringify(result.args || []) }`,
+            `opts: ${ JSON.stringify(result.options) }`,
+            `exit code: ${ result.exitCode }`,
+            `stdout:\n${ result.stdout.join("\n") }`,
+            `stderr:\n${ result.stderr.join("\n") }`
         ].join("\n");
     }
 
