@@ -94,6 +94,7 @@ export async function gitBroadcast(
             }
             // can't assume master is the head ref any more
             // -> but can fall back on that as a last resort
+            await fetchAll();
             await git("checkout", opts.from);
             startBranch = await findCurrentBranch();
         }
@@ -101,12 +102,7 @@ export async function gitBroadcast(
             throw new Error("don't know where to start from!");
         }
 
-        try {
-            // try to unshallow first
-            await git("fetch", "--unshallow");
-        } catch (e) {
-            await git("fetch", "--all");
-        }
+        await fetchAll();
 
         clearCaches();
 
@@ -123,6 +119,21 @@ export async function gitBroadcast(
         logger.debug(ok(`all targets have been visited!`));
         return result;
     });
+}
+
+let haveFetchedAll = false;
+async function fetchAll() {
+    if (haveFetchedAll) {
+        return;
+    }
+    try {
+        // try to unshallow first
+        await git("fetch", "--unshallow");
+        haveFetchedAll = true;
+    } catch (e) {
+        await git("fetch", "--all");
+        haveFetchedAll = true;
+    }
 }
 
 async function tryMergeAll(
@@ -430,6 +441,7 @@ async function findDefaultBranch(): Promise<string | undefined> {
 const rawBranchResultCache: string[] = [];
 
 export function clearCaches() {
+    haveFetchedAll = false;
     rawBranchResultCache.splice(0, rawBranchResultCache.length);
 }
 

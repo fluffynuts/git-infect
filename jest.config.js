@@ -1,12 +1,52 @@
 // For a detailed explanation regarding each configuration property, visit:
 // https://jestjs.io/docs/en/configuration.html
 
+const positives = new Set([ "1", "yes", "true" ]);
+
+function envFlag(varname, fallback) {
+  fallback = !!fallback;
+  const envValue = process.env[varname];
+  if (envValue === undefined) {
+    return fallback;
+  }
+  return positives.has(envValue.toLowerCase());
+}
+
+function envNumber(varname, fallback) {
+  if (fallback === undefined) {
+    throw new Error(`fallback is required for 'envNumber'`);
+  }
+  const envValue = process.env[varname];
+  if (envValue === undefined) {
+    if (typeof fallback === "function") {
+      return fallback();
+    } else {
+      return fallback;
+    }
+  }
+  const parsed = parseInt(envValue);
+  if (isNaN(parsed)) {
+    throw new Error(`expected a number for environment variable '${varname}' but received '${envValue}'`);
+  }
+  return parsed;
+}
+
+const
+  bail = envFlag("FAIL_FAST")
+    ? 1
+    : 0,
+  maxWorkers = envNumber("MAX_CONCURRENCY", () => {
+    const os = require("os");
+    return Math.floor(os.cpus() / 2);
+  });
+
 module.exports = {
   // All imported modules in your tests should be mocked automatically
   // automock: false,
 
   // Stop running tests after `n` failures
   // bail: 0,
+  bail,
 
   // The directory where Jest should store its cached dependency information
   // cacheDirectory: "C:\\Users\\davyd.mccoll\\AppData\\Local\\Temp\\jest",
@@ -60,6 +100,7 @@ module.exports = {
 
   // The maximum amount of workers used to run your tests. Can be specified as % or a number. E.g. maxWorkers: 10% will use 10% of your CPU amount + 1 as the maximum worker number. maxWorkers: 2 will use a maximum of 2 workers.
   // maxWorkers: "50%",
+  maxWorkers,
 
   // An array of directory names to be searched recursively up from the requiring module's location
   // moduleDirectories: [

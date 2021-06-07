@@ -12,7 +12,7 @@ describe(`git-broadcast`, () => {
         clearCaches();
     });
 
-    // afterEach(async () => await Sandbox.destroyAll());
+    afterEach(async () => await Sandbox.destroyAll());
 
     describe(`when one branch successfully merged`, () => {
         describe(`merge contains no edits to branch`, () => {
