@@ -216,13 +216,13 @@ async function tryMerge(
         ok = makeOk(prefixer),
         construction = makeConstruction(prefixer),
         success = makeSuccess(prefixer),
-        error = makeFail(prefixer);
+        fail = makeFail(prefixer);
 
     try {
         logger.debug(info(`check out target: ${ target }`));
         await gitCheckout(target);
     } catch (e) {
-        logger.error(error(`cannot check out ${ target }; skipping`));
+        logger.error(fail(`cannot check out ${ target }; skipping`));
         // can't check it out; just ignore it? perhaps there's a more
         // deterministic plan, but for now, this will do
         // in particular, this is triggered by git branch --list -a *
@@ -231,7 +231,7 @@ async function tryMerge(
         return result;
     }
     if (!(await findCurrentBranch())) {
-        logger.error(error(`can't find current branch!`));
+        logger.error(fail(`can't find current branch!`));
         return result;
     }
     const fullyQualifiedFrom = `${ opts.fromRemote }/${ opts.from }`;
