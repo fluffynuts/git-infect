@@ -18,7 +18,7 @@ const debug = mkdebug(__filename);
     try {
         const args = await parseArgs();
         if (args["show-version"]) {
-            console.log(`git-broadcast ${await readVersionInfo()}`);
+            console.log(`version: ${await readVersionInfo()}`);
         }
         args.logger = args.verbose
             ? new ConsoleLogger(LogLevel.debug)
