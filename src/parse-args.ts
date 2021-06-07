@@ -7,6 +7,7 @@ export interface CliOptions extends BroadcastOptions {
     "print-summary": boolean;
     "pretty": boolean;
     "show-version": boolean;
+    "suppress-log-prefixes": boolean;
 }
 
 export async function parseArgs() {
@@ -68,6 +69,10 @@ export async function parseArgs() {
             type: "boolean",
             default: true,
             description: "show the version of git-broadcast during normal operations"
+        }).option("suppress-log-prefixes", {
+            type: "boolean",
+            default: false,
+            description: "suppress log prefixes in logging for cleaner output, eg when redirecting to slack"
         })
         .version(await readVersionInfo())
         .help()

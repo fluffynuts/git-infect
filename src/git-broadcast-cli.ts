@@ -21,8 +21,8 @@ const debug = mkdebug(__filename);
             console.log(`version: ${await readVersionInfo()}`);
         }
         args.logger = args.verbose
-            ? new ConsoleLogger(LogLevel.debug)
-            : new ConsoleLogger(LogLevel.info);
+            ? new ConsoleLogger(LogLevel.debug, args["suppress-log-prefixes"])
+            : new ConsoleLogger(LogLevel.info, args["suppress-log-prefixes"]);
         if (args.pretty) {
             args.logPrefixer = (prefix: string, message: string) => `${prefix} ${message}`;
         }

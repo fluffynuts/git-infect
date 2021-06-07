@@ -70,34 +70,44 @@ export class ConsoleLogger implements Logger {
 
     private readonly _level: LogLevel;
 
-    constructor(level?: LogLevel) {
+    constructor(
+        level?: LogLevel,
+        suppressLogPrefixes?: boolean
+    ) {
         if (level === undefined) {
             level = LogLevel.info;
+        }
+        if (suppressLogPrefixes === undefined) {
+            suppressLogPrefixes = false;
         }
 
         this._level = level;
 
         this._debug = level > LogLevel.debug
             ? noop
-            : this._makeLogger(console.debug.bind(console), chalk.gray.bind(chalk), "DEBUG");
+            : this._makeLogger(console.debug.bind(console), chalk.gray.bind(chalk), "DEBUG", suppressLogPrefixes);
         this._info = level > LogLevel.info
             ? noop
-            : this._makeLogger(console.log.bind(console), chalk.yellow.bind(chalk), "INFO");
+            : this._makeLogger(console.log.bind(console), chalk.yellow.bind(chalk), "INFO", suppressLogPrefixes);
         this._warn = level > LogLevel.warn
             ? noop
-            : this._makeLogger(console.log.bind(console), chalk.magenta.bind(chalk), "WARN");
+            : this._makeLogger(console.log.bind(console), chalk.magenta.bind(chalk), "WARN", suppressLogPrefixes);
         // if we bind to console.error, then the consumer has to redirect stderr to catch error
         // messages in a piped application (eg slack-webhook-say)
-        this._error = this._makeLogger(console.log.bind(console), chalk.red.bind(chalk), "ERROR")
+        this._error = this._makeLogger(console.log.bind(console), chalk.red.bind(chalk), "ERROR", suppressLogPrefixes)
     }
 
     private _makeLogger(
         logger: LogFunction,
         colorizer: PassThrough<string>,
-        prefix: string
+        prefix: string,
+        suppressTimestamps: boolean
     ): LogFunction {
+        const generatePrefix = suppressTimestamps
+            ? () => ""
+            : () => `[ ${ prefix } :: ${ timestamp() } ]`
         return (...args: any[]) => {
-            const stampedPre = `[ ${ prefix } :: ${ timestamp() } ]`;
+            const stampedPre = generatePrefix();
             if (typeof args[0] === "string") {
                 args[0] = `${stampedPre} ${ args[0] }`;
             } else {
