@@ -1,6 +1,7 @@
 import { Logger } from "./console-logger";
 
 export class NullLogger implements Logger {
+    public logPrefix: string = "";
     debug(): void {
         // intentionally does nothing
     }

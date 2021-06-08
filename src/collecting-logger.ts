@@ -1,6 +1,7 @@
 import { Logger, stringify } from "./console-logger";
 
 export class CollectingLogger implements Logger {
+    public logPrefix: string = "";
     public debugLogs: string[] = [];
     public warnLogs: string[] = [];
     public errorLogs: string[] = [];

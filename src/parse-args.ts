@@ -8,9 +8,10 @@ export interface CliOptions extends BroadcastOptions {
     "pretty": boolean;
     "show-version": boolean;
     "suppress-log-prefixes": boolean;
+    "prefix-logs-with": string;
 }
 
-export async function parseArgs() {
+export async function parseArgs(): Promise<CliOptions> {
     return yargs
         .option("from", {
             type: "string",
@@ -72,9 +73,13 @@ export async function parseArgs() {
         }).option("suppress-log-prefixes", {
             type: "boolean",
             default: false,
-            description: "suppress log prefixes in logging for cleaner output, eg when redirecting to slack"
+            description: "suppress log prefixes (timestamp and log level) in logging for cleaner output, eg when redirecting to slack"
+        }).option("prefix-logs-with", {
+            type: "string",
+            default: "",
+            description: "prefix all logging with this string (eg your repo name, to clarify interleaved log collection)"
         })
         .version(await readVersionInfo())
         .help()
-        .argv as CliOptions; // types out of yargs come out a little... funny
+        .argv;
 }

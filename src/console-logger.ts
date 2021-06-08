@@ -4,6 +4,7 @@ export type LogFunction = (...args: any[]) => void;
 type PassThrough<T> = (o: T) => T;
 
 export interface Logger {
+    logPrefix: string;
     info: LogFunction;
     warn: LogFunction;
     error: LogFunction;
@@ -63,6 +64,8 @@ export class ConsoleLogger implements Logger {
         return this._level;
     }
 
+    public logPrefix: string = "";
+
     private readonly _error: LogFunction;
     private readonly _warn: LogFunction;
     private readonly _info: LogFunction;
@@ -103,15 +106,21 @@ export class ConsoleLogger implements Logger {
         prefix: string,
         suppressTimestamps: boolean
     ): LogFunction {
-        const generatePrefix = suppressTimestamps
+        const generateTimestampAndLevelPrefix = suppressTimestamps
             ? () => ""
             : () => `[ ${ prefix } :: ${ timestamp() } ]`
+        const customPrefix = () => !!(this.logPrefix || "").trim()
+            ? `${ this.logPrefix } `
+            : "";
         return (...args: any[]) => {
-            const stampedPre = generatePrefix();
+            const
+                stampedPre = generateTimestampAndLevelPrefix(),
+                customPre = customPrefix(),
+                pre = `${ customPre }${ stampedPre }`;
             if (typeof args[0] === "string") {
-                args[0] = `${stampedPre} ${ args[0] }`;
+                args[0] = `${ pre } ${ args[0] }`;
             } else {
-                args = [ stampedPre ].concat(args);
+                args = [ pre ].concat(args);
             }
             logger(
                 ...args.map(a => colorizer(a))

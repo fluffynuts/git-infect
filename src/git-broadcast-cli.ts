@@ -23,6 +23,7 @@ const debug = mkdebug(__filename);
         args.logger = args.verbose
             ? new ConsoleLogger(LogLevel.debug, args["suppress-log-prefixes"])
             : new ConsoleLogger(LogLevel.info, args["suppress-log-prefixes"]);
+        args.logger.logPrefix = args["prefix-logs-with"];
         if (args.pretty) {
             args.logPrefixer = (prefix: string, message: string) => `${prefix} ${message}`;
         }
