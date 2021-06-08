@@ -84,7 +84,14 @@ export async function gitBroadcast(
             startBranch = await findCurrentBranch();
         }
         if (!startBranch) {
-            throw new Error("don't know where to start from!");
+            const
+                revs = await revParse("HEAD");
+            startBranch = revs[0];
+            if (!startBranch) {
+                logger.warn(`Unable to determine "starting branch"; when this process completes, this repo will not be restored to the original checkout SHA`)
+            } else {
+                logger.warn(`Unable to determine "starting branch"; when this process completes, this repo will be restored to ${startBranch}`)
+            }
         }
 
         await fetchAll();
